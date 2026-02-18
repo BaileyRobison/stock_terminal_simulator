@@ -7,4 +7,4 @@ market.set_regime('neutral')
 market.add_stock(name = 'ABX')
 print(market.stocks[0].__dict__)
 
-run_stock(market)
+run_stock(market, duration = 0.005)
