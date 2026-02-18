@@ -26,10 +26,9 @@ class Market:
             'rally': (5, 20),
         }
     
-    def __getattr__(self, attr):
-        # only runs if missing attribute
+    def __getattr__(self, attr): # only runs if missing attribute
         if attr == 'price':
-            return self.stocks[0].price
+            return self.stocks[-1].price
         
     def add_stock(self, *args, **kwargs):
         stock = Stock(*args, **kwargs)
