@@ -4,29 +4,28 @@ Basic display in matplotlib
 import matplotlib.pyplot as plt
 
 def run_stock(market, ticks = 100, duration = 0.1):
-    prices = [market.stocks[0].price]
-    changes = [0]
+    prices = [market.stocks[0].price] # initial price
 
-    plt.ion()
+    plt.ion() # enter interactive mode
     fig, ax = plt.subplots()
     
-    for i in range(ticks): # random updates to price
+    for tick in range(ticks): # random updates to price
         market.update_stock()
-        
         prices.append(market.price)
-        changes.append(prices[i] - prices[i-1])
         
-    colors = ['green' if c > 0 else 'red' if c < 0 else 'gray' for c in changes]
+    for tick in range(1, ticks): # plot bars
+        prev = prices[tick-1]
+        curr = prices[tick]
+
+        if curr > prev:
+            color = 'green'
+        else:
+            color = 'red'
+            
+        # plot new bar
+        ax.bar(tick, curr - prev, bottom=prev, color=color, width=0.8)
         
-        
-    for i in range(ticks): # show updating plot
-        ax.clear()
-        
-        #ax.plot(prices[:i+1]
-        ax.bar(range(len(changes[:i+1])), changes[:i+1], color=colors[:i+1])
-        
-        plt.pause(duration)
+        plt.pause(duration)    
     
-    
-    plt.ioff()
+    plt.ioff() # leave interactive mode
     plt.show()
