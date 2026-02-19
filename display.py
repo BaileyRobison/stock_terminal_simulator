@@ -32,7 +32,7 @@ class Plotter:
         """
         Calculate stock prices from market
         """
-        prices = [market.stocks[0].price]
+        prices = [market.price]
         times = [datetime(2026,1,1,12,0)]
             
         for tick in range(self.ticks): # random updates to price
@@ -63,8 +63,6 @@ class Plotter:
         ax.set_xticks(range(0, tick, tick_delta))
         ax.set_xticklabels(self.times[::tick_delta])
     
-        plt.pause(self.duration)
-    
     def plot(self):
         """
         Generate entire plot with all bars
@@ -81,6 +79,7 @@ class Plotter:
         
         for tick in range(1, self.ticks):
             self._plot_tick(ax, tick)
+            plt.pause(self.duration)
             
         plt.ioff() # leave interactive mode
         plt.show()

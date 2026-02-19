@@ -1,4 +1,4 @@
-import random
+import numpy as np
 
 class Stock:
     def __init__(self, name = '', price = 100):
@@ -6,44 +6,70 @@ class Stock:
         self.price = price
         
     def update_price(self, delta):
-        self.price += delta
+        self.set_price(self.price + delta)
+    
+    def set_price(self, price):
+        self.price = price        
         
         # account for bounds
         self.price = max([0, self.price])
         self.price = min([self.price, 1000])
-        
+
 
 class Market:
+    REGIMES = { # parameters for market regimes
+        "neutral":{"mu": 0.0, "base_vol": 0.015, "df": 6},
+        "bull":    {"mu": 0.002, "base_vol": 0.02, "df": 8},
+        "bear":    {"mu": -0.002, "base_vol": 0.03, "df": 5},
+        "crash":  {"mu": -0.005, "base_vol": 0.05, "df": 3},
+    }
+    
     def __init__(self):
-        self.stocks = []
-        self.market = 'neutral'
+        self.stock = Stock()
         
-        self.regimes = {
-            'neutral': (-10, 10),
-            'bull': (-5, 15),
-            'bear': (-15, 5),
-            'crash': (-20, -5),
-            'rally': (5, 20),
-        }
+        # market variables
+        self.mu = 0 # drift upward or downward
+        self.base_vol = 0 # market stability
+        self.df = 0 # rarity of crahses and spikes
+   
+        # set initial market regime
+        self.set_regime('neutral')
+        self.volatility = self.base_vol
     
     def __getattr__(self, attr): # only runs if missing attribute
         if attr == 'price':
-            return self.stocks[-1].price
+            return self.stock.price
         
-    def add_stock(self, *args, **kwargs):
-        stock = Stock(*args, **kwargs)
-        self.stocks.append(stock)
+    def set_stock(self, *args, **kwargs):
+        self.stock = Stock(*args, **kwargs)
         
     def set_regime(self, regime):
-        if regime not in self.regimes:
+        if regime not in self.REGIMES:
             raise ValueError(f"Invalid market regime: {regime}")
             regime = 'neutral'
         
-        self.regime = regime
+        # set market variables    
+        for key in ['mu', 'base_vol', 'df']:
+           setattr(self, key, self.REGIMES[regime][key])
         
-    def update_stock(self):
-        lower, upper = self.regimes[self.regime]
+    def update_volatility(self):
+        self.volatility = np.random.normal(0, 0.001) # random noise
         
-        r = random.randint(lower, upper)
-        self.stocks[0].update_price(r)
+        # revert toward base
+        self.volatility += 0.05 * (self.base_vol - self.volatility)
+        
+        # apply bounds
+        self.volatility = max([0.02, self.volatility])
+        self.volatility = min([self.volatility, 0.05])
+        
+    def update_stock(self):    
+        self.update_volatility()
+    
+        # calculate shock from volatility
+        scale = np.sqrt(self.df / (self.df - 2))
+        shock = np.random.standard_t(self.df) * self.volatility / scale
+    
+        # adjust price
+        new_price = self.price * np.exp(self.mu + shock)
+        self.stock.set_price(new_price)
         
