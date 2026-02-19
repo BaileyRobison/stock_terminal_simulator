@@ -1,7 +1,7 @@
 import sys
 
 from stock import Market
-from display import run_stock
+from display import Plotter
 
 if len(sys.argv) > 1:
     regime = sys.argv[1]
@@ -12,4 +12,5 @@ market = Market()
 market.set_regime(regime)
 market.add_stock(name = 'ABX')
 
-run_stock(market, ticks = 100, duration = 0.005)
+pl = Plotter()
+pl.plot_stock_prices(market, ticks = 100, duration = 0.005)
