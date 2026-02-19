@@ -77,13 +77,15 @@ class Plotter:
             ax.spines[side].set_color(self.colors['axes'])
         ax.tick_params(axis='both', color=self.colors['axes'], labelcolor=self.colors['axes'])
         
+        plt.grid(color=self.colors['grid'], linestyle='--', alpha=0.2)
+        
         for tick in range(1, self.ticks):
             self._plot_tick(ax, tick)
             
         plt.ioff() # leave interactive mode
         plt.show()
         
-    def plot_stock_prices(self, market, ticks = None, duration = None):
+    def plot_stock_price(self, market, ticks = None, duration = None):
         """
         Run everything required for plotting
         """

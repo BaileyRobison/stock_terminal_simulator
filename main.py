@@ -13,4 +13,4 @@ market.set_regime(regime)
 market.add_stock(name = 'ABX')
 
 pl = Plotter()
-pl.plot_stock_prices(market, ticks = 100, duration = 0.005)
+pl.plot_stock_price(market, ticks = 100, duration = 0.005)
