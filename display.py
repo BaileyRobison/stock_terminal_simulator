@@ -3,21 +3,10 @@ Basic display in matplotlib
 """
 import matplotlib.pyplot as plt
 from datetime import datetime, timedelta
-import yaml
-import os
 
-def read_yaml(yaml_file):
-    # path to yaml file
-    current_dir = os.path.dirname(__file__)
-    path = current_dir+'/config/'+yaml_file+'.yaml'
-    
-    # open yaml file
-    with open(path, encoding= 'utf-8') as f:
-        yaml_content = yaml.safe_load(f)
-        
-    return yaml_content
+from utils import read_yaml
 
-    
+
 class Plotter:
     def __init__(self, ticks = 100, duration = 0.1):
         self.colors = read_yaml('style')

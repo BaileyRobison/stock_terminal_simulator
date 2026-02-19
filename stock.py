@@ -1,5 +1,8 @@
 import numpy as np
 
+from utils import read_yaml
+
+
 class Stock:
     def __init__(self, name = '', price = 100):
         self.name = name
@@ -17,12 +20,8 @@ class Stock:
 
 
 class Market:
-    REGIMES = { # parameters for market regimes
-        "neutral":{"mu": 0.0, "base_vol": 0.015, "df": 6},
-        "bull":    {"mu": 0.002, "base_vol": 0.02, "df": 8},
-        "bear":    {"mu": -0.002, "base_vol": 0.03, "df": 5},
-        "crash":  {"mu": -0.005, "base_vol": 0.05, "df": 3},
-    }
+    # parameters for market regimes
+    REGIMES = read_yaml('parameters')['regimes']
     
     def __init__(self):
         self.stock = Stock()
