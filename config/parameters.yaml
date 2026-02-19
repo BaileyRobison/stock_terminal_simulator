@@ -1,0 +1,17 @@
+regimes:
+  neutral:
+    mu: 0.0
+    base_vol: 0.015
+    df: 15
+  bull:
+    mu: 0.002
+    base_vol: 0.02
+    df: 8
+  bear:
+    mu: -0.002
+    base_vol: 0.03
+    df: 5
+  crisis:
+    mu: -0.005
+    base_vol: 0.05
+    df: 3
