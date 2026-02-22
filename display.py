@@ -3,6 +3,7 @@ Basic display in matplotlib
 """
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
+from PIL import Image, ImageTk
 
 from utils import read_yaml
 
@@ -17,7 +18,16 @@ class Plotter:
         self.ax = None
     
     def initialize_plot(self):
+        plt.switch_backend('TkAgg')
+
         fig = plt.figure(figsize=(12, 8), facecolor=self.colors['bg'])
+        fig.canvas.manager.toolbar.pack_forget() # remove toolbar and buttons
+        fig.canvas.manager.window.title('TERMINAL') # window name
+        
+        white_image = Image.new('RGB', (1, 1), (255, 255, 255)) # 1x1 white image
+        white_image_tk = ImageTk.PhotoImage(white_image)
+        fig.canvas.manager.window.iconphoto(False, white_image_tk) # replace matplotlib logo
+        
         gs = GridSpec(1, 1, figure=fig)
         self.ax = fig.add_subplot(gs[0])
         self.ax.set_facecolor(self.colors['bg'])
