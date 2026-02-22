@@ -2,6 +2,7 @@
 Basic display in matplotlib
 """
 import matplotlib.pyplot as plt
+from matplotlib.gridspec import GridSpec
 
 from utils import read_yaml
 
@@ -13,11 +14,12 @@ class Plotter:
         self.ticks = ticks
         self.duration = duration
         
-        self.fig = None
         self.ax = None
     
     def initialize_plot(self):
-        self.fig, self.ax = plt.subplots(facecolor=self.colors['bg'])
+        fig = plt.figure(figsize=(12, 8), facecolor=self.colors['bg'])
+        gs = GridSpec(1, 1, figure=fig)
+        self.ax = fig.add_subplot(gs[0])
         self.ax.set_facecolor(self.colors['bg'])
         
         for side in ['bottom', 'top', 'left', 'right']:
