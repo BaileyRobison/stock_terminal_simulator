@@ -34,7 +34,7 @@ class Market:
         # set initial market regime
         self.set_regime('neutral')
         self.volatility = self.base_vol
-    
+        
     def __getattr__(self, attr): # only runs if missing attribute
         if attr == 'price':
             return self.stock.price
