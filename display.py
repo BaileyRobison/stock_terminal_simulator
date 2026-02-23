@@ -40,7 +40,7 @@ class Plotter:
         
         plt.ion() # enter interactive mode
 
-    def plot_tick(self, tick, prices, times):
+    def plot_tick(self, tick, prices, times, lows, highs):
         """
         Plot bar for single tick
         """
@@ -48,12 +48,15 @@ class Plotter:
         curr = prices[tick]
 
         if curr > prev:
-            color = self.colors['green_bar']
+            bar_color = self.colors['green_bar']
         else:
-            color = self.colors['red_bar']
+            bar_color = self.colors['red_bar']
             
+        # plot wicks    
+        self.ax.vlines(tick, lows[tick], highs[tick], lw=1, color=bar_color)
+        
         # plot new bar
-        self.ax.bar(tick, curr - prev, bottom=prev, color=color, width=0.8)
+        self.ax.bar(tick, curr - prev, bottom=prev, color=bar_color, width=0.8)
     
         tick_delta = max([5, int(tick/5)]) # change spacing between ticks
         self.ax.set_xticks(range(0, tick, tick_delta))

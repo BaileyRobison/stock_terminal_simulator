@@ -13,4 +13,4 @@ market.set_regime(regime)
 market.set_stock(name = 'ABX')
 
 eng = Engine(market)
-eng.run(ticks = 200, duration = 0.0005)
+eng.run(ticks = 100, duration = 0.0005)
