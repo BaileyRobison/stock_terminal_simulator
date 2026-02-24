@@ -1,13 +1,34 @@
 from datetime import datetime, timedelta
 import numpy as np
 
-from display import Plotter
+from display import PlotBase, CandlestickPlotter
 
 class Engine:
+    """
+    Runs everything
+    """
     def __init__(self, market):
-        self.market = market
-        self.pl = None
+        self.price_engine = PriceEngine(market, wicks=True)
         
+        self.pl = PlotBase()
+        self.candle_pl = CandlestickPlotter(self.pl)
+        
+    def run(self, ticks = 100, duration = 0.1):        
+        for tick in range(1, ticks):
+            self.price_engine.update()
+            self.candle_pl.plot_tick(tick, self.price_engine)        
+            self.pl.pause(duration)
+            
+        self.pl.end_plot()
+        
+class PriceEngine:
+    """
+    Handles stock prices for candlestick chart
+    """
+    def __init__(self, market, wicks = True):
+        self.market = market
+        self.wicks = wicks
+                
         self.time_step = 1 # minutes
         self.time_format = '%H:%M'
         
@@ -21,7 +42,8 @@ class Engine:
         self.market.update_stock()
         self.prices.append(self.market.price)
 
-        self.random_wicks()
+        if self.wicks:
+            self.random_wicks()
 
         # update time
         new_time = datetime.strptime(self.times[-1], self.time_format)
@@ -56,14 +78,3 @@ class Engine:
         low = min(open_price, close_price) - lower_wick
         self.lows.append(low)
         self.highs.append(high)
-        
-    def run(self, ticks = 100, duration = 0.1):
-        self.pl = Plotter(ticks, duration)
-        self.pl.initialize_plot()
-        
-        for tick in range(1, ticks):
-            self.update()
-            self.pl.plot_tick(tick, self.prices, self.times, self.lows, self.highs)            
-            self.pl.pause(duration)
-            
-        self.pl.end_plot()
