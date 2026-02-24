@@ -3,21 +3,40 @@ import numpy as np
 
 from display import PlotBase, CandlestickPlotter
 
+
 class Engine:
     """
     Runs everything
     """
     def __init__(self, market):
-        self.price_engine = PriceEngine(market, wicks=True)
+        self.price_engine = PriceEngine(market)
         
-        self.pl = PlotBase()
-        self.candle_pl = CandlestickPlotter(self.pl)
+        self.pl = PlotBase((3,3)) # base plot
         
-    def run(self, ticks = 100, duration = 0.1):        
-        for tick in range(1, ticks):
+        # long term candle chart
+        self.long_candle_pl = CandlestickPlotter(self.pl, 0, 0, 3, 1, wicks=False)
+        
+        # short term candle chart
+        self.candle_pl = CandlestickPlotter(self.pl, 1, 0, 3, 2)
+        
+    def run(self, ticks = 100, duration = 0.1):
+        initial_ticks = 200
+        
+        for tick in range(1, initial_ticks): # initial bars, long term only
             self.price_engine.update()
-            self.candle_pl.plot_tick(tick, self.price_engine)        
-            self.pl.pause(duration)
+            self.long_candle_pl.plot_tick(tick, self.price_engine)  
+        
+        self.pl.start_plot()
+        
+        for tick in range(0, ticks): # plot ticks on both
+            total_tick = tick + initial_ticks # total ticks so far
+            
+            self.price_engine.update()
+            self.candle_pl.plot_tick(total_tick, self.price_engine, start_tick=initial_ticks)            
+            self.long_candle_pl.plot_tick(total_tick, self.price_engine)
+            
+            self.pl.pause(duration)  
+            
             
         self.pl.end_plot()
         
@@ -25,9 +44,8 @@ class PriceEngine:
     """
     Handles stock prices for candlestick chart
     """
-    def __init__(self, market, wicks = True):
+    def __init__(self, market):
         self.market = market
-        self.wicks = wicks
                 
         self.time_step = 1 # minutes
         self.time_format = '%H:%M'
@@ -42,8 +60,7 @@ class PriceEngine:
         self.market.update_stock()
         self.prices.append(self.market.price)
 
-        if self.wicks:
-            self.random_wicks()
+        self.random_wicks()
 
         # update time
         new_time = datetime.strptime(self.times[-1], self.time_format)

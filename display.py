@@ -8,27 +8,30 @@ from PIL import Image, ImageTk
 from utils import read_yaml
 
 
-
 class PlotBase:
     """
     Base plot, holds subplots
     """
-    def __init__(self):
+    def __init__(self, size=(1,1)):
         self.colors = read_yaml('style')
-        
+
         plt.switch_backend('TkAgg')
-        
-        fig = plt.figure(figsize=(12, 8), facecolor=self.colors['bg'])
+
+        fig = plt.figure(facecolor=self.colors['bg'])
         fig.canvas.manager.toolbar.pack_forget() # remove toolbar and buttons
         fig.canvas.manager.window.title('TERMINAL') # window name
         fig.set_tight_layout(True) # remove extra padding outside plot
-        
+
+        # cover entire screen        
+        fig_manager = plt.get_current_fig_manager()
+        fig_manager.window.state('zoomed')
+
         white_image = Image.new('RGB', (1, 1), (255, 255, 255)) # 1x1 white image
         white_image_tk = ImageTk.PhotoImage(white_image)
         fig.canvas.manager.window.iconphoto(False, white_image_tk) # replace matplotlib logo
 
         self.fig = fig
-        self.gs = GridSpec(1, 1, figure=self.fig)
+        self.gs = GridSpec(size[0], size[1], figure=self.fig)
         
     def add_subplot(self, row, col, width=1, height=1):
         """
@@ -38,7 +41,7 @@ class PlotBase:
         ax = self.fig.add_subplot(self.gs[row:row+height, col:col+width])
         return ax
     
-    def start_plot():
+    def start_plot(self):
         plt.ion() # enter interactive mode
     
     def pause(self, duration):
@@ -47,16 +50,18 @@ class PlotBase:
     def end_plot(self):
         plt.ioff() # leave interactive mode
         plt.show()
-        
+
+
 class CandlestickPlotter:
     """
     Plots candlestick chart
     Takes base plot as argument
     """
-    def __init__(self, base_fig):
+    def __init__(self, base_fig, row, col, width=1, height=1, wicks=True):
+        self.wicks = wicks
         self.colors = read_yaml('style')
         
-        self.ax = base_fig.add_subplot(0, 0)
+        self.ax = base_fig.add_subplot(row, col, width, height)
         
         self.ax.set_facecolor(self.colors['bg'])
         
@@ -66,10 +71,14 @@ class CandlestickPlotter:
         
         plt.grid(color=self.colors['grid'], linestyle='--', alpha=0.2)
 
-    def plot_tick(self, tick, price_engine):
+    def plot_tick(self, tick, price_engine, start_tick=0):
         """
         Plot bar for single tick
         """
+        # shift tick by start_tick for plotting
+        # use this for plotting, setting x ticks, time delta
+        x_tick = tick - start_tick
+        
         prev = price_engine.prices[tick-1]
         curr = price_engine.prices[tick]
 
@@ -78,12 +87,13 @@ class CandlestickPlotter:
         else:
             bar_color = self.colors['red_bar']
             
-        # plot wicks    
-        self.ax.vlines(tick, price_engine.lows[tick], price_engine.highs[tick], lw=1, color=bar_color)
+        if self.wicks: # plot wicks 
+            self.ax.vlines(x_tick, price_engine.lows[tick], price_engine.highs[tick], lw=1, color=bar_color)
         
         # plot new bar
-        self.ax.bar(tick, curr - prev, bottom=prev, color=bar_color, width=0.8)
+        self.ax.bar(x_tick, curr - prev, bottom=prev, color=bar_color, width=0.8)
     
-        tick_delta = max([5, int(tick/5)]) # change spacing between ticks
-        self.ax.set_xticks(range(0, tick, tick_delta))
-        self.ax.set_xticklabels(price_engine.times[::tick_delta])
+        tick_delta = max([5, int(x_tick/5)]) # change spacing between ticks
+        self.ax.set_xticks(range(0, x_tick, tick_delta))
+        self.ax.set_xticklabels(price_engine.times[start_tick::tick_delta]) # get times after start_tick
+        
