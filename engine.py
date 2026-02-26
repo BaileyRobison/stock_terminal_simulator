@@ -2,29 +2,31 @@ from datetime import datetime, timedelta
 import numpy as np
 
 from display import PlotBase, CandlestickPlotter
+from utils import read_yaml
 
 
 class Engine:
     """
     Runs everything
     """
-    def __init__(self, market):        
+    def __init__(self, market, settings = {}):  
         self.price_engine = PriceEngine(market)
+        self.long_term_update = settings.get('long_term_update', 10)
         
-        self.pl = PlotBase((3,3)) # base plot
+        self.pl = PlotBase((4,3)) # base plot
         
         # long term candle chart
-        self.start_tick = 400
+        self.start_tick = settings.get('long_term_bars', 400)
         self.long_candle_pl = CandlestickPlotter(self.pl, 0, 0, 3, 1, plot_wicks=False, plot_ticks=False)
         self.long_candle_pl.initialize_bars(num_bars = self.start_tick)
         
         # short term candle chart
-        self.candle_pl = CandlestickPlotter(self.pl, 1, 0, 3, 2)
-        self.candle_pl.initialize_bars(num_bars = 100)
+        self.candle_pl = CandlestickPlotter(self.pl, 1, 0, 3, 3)
+        self.candle_pl.initialize_bars(num_bars = settings.get('bars', 100))
         
         self.pl.fig.subplots_adjust(hspace=0)
         
-        padding = 0.05 # remove extra padding outside plot
+        padding = read_yaml('style')['design']['figure_padding'] # remove extra padding outside plot
         self.pl.fig.subplots_adjust(left=padding, right=1-padding, top=1-padding, bottom=padding)
         
     def run(self, ticks = 100, duration = 0.1):
@@ -39,7 +41,7 @@ class Engine:
             self.price_engine.update()
             self.candle_pl.plot_tick(total_tick, self.price_engine)    
             
-            if tick % 10 == 0:
+            if tick % self.long_term_update == 0:
                 self.long_candle_pl.plot_tick(total_tick, self.price_engine)
             
             self.pl.pause(duration)  

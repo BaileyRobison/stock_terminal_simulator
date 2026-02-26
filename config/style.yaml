@@ -1,5 +1,13 @@
-bg: "#303030"
-axes: "white"
-grid: "#C0C0C0"
-green_bar: "#90EE90"
-red_bar: "#FF474C"
+colors:
+  bg: "#303030"
+  axes: "white"
+  grid: "#C0C0C0"
+  green_bar: "#90EE90"
+  red_bar: "#FF474C"
+
+design:
+  x_lim_buffer: 2
+  y_lim_buffer: 2
+  figure_padding: 0.05
+  grid_line_style: "--"
+  grid_line_alpha: 0.2

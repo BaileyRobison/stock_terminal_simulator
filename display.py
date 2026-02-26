@@ -14,7 +14,9 @@ class PlotBase:
     Base plot, holds subplots
     """
     def __init__(self, size=(1,1)):
-        self.colors = read_yaml('style')
+        style_content = read_yaml('style')
+        self.colors = style_content['colors']
+        self.design = style_content['design']
 
         plt.switch_backend('TkAgg')
 
@@ -63,7 +65,10 @@ class CandlestickPlotter:
     def __init__(self, base_fig, row, col, width=1, height=1, plot_wicks=True, plot_ticks=True):
         self.plot_wicks = plot_wicks
         self.plot_ticks = plot_ticks
-        self.colors = read_yaml('style')
+        
+        style_content = read_yaml('style')
+        self.colors = style_content['colors']
+        self.design = style_content['design']
         
         self.ax = base_fig.add_subplot(row, col, width, height)
         
@@ -73,15 +78,20 @@ class CandlestickPlotter:
             self.ax.spines[side].set_color(self.colors['axes'])
         self.ax.tick_params(axis='both', color=self.colors['axes'], labelcolor=self.colors['axes'])
         
-        plt.grid(color=self.colors['grid'], linestyle='--', alpha=0.2)
+        line = self.design['grid_line_style']
+        alpha = self.design['grid_line_alpha']
+        plt.grid(color=self.colors['grid'], linestyle=line, alpha=alpha)
 
         self.bars = []
         self.wicks = []
 
     def initialize_bars(self, num_bars = 50):
+        """
+        Initialize based on number of bars
+        """
         self.bars = self.ax.bar(range(num_bars), [0]*num_bars)
         
-        buffer = 2
+        buffer = self.design['x_lim_buffer']
         self.ax.set_xlim(-1 * buffer, num_bars + buffer)
         
         if self.plot_wicks: # add wicks if needed
@@ -91,7 +101,10 @@ class CandlestickPlotter:
             self.ax.set_xticks([])
             self.ax.set_yticks([])
 
-    def plot_tick(self, tick, price_engine):      
+    def plot_bars(self, tick, price_engine):
+        """
+        Adjust heights, positions, colors for bars
+        """
         # for wicks
         segments = []
         colors = []
@@ -118,7 +131,10 @@ class CandlestickPlotter:
             self.wicks.set_segments(segments)
             self.wicks.set_color(colors)
 
-        # set y limits
+    def set_y_lim(self, tick, price_engine):
+        """
+        Scale y axis, account for whether or not we are plotting wicks
+        """
         if self.plot_wicks: # include wicks in y lim
             low_wicks = price_engine.lows[tick-len(self.bars):tick]
             high_wicks = price_engine.highs[tick-len(self.bars):tick]
@@ -126,13 +142,15 @@ class CandlestickPlotter:
             low_wicks = price_engine.prices[tick-len(self.bars):tick]
             high_wicks = price_engine.prices[tick-len(self.bars):tick]
 
-        buffer = 2
-        min_price = min(low_wicks) - buffer
-        max_price = max(high_wicks) + buffer
+        min_price = min(low_wicks) - self.design['y_lim_buffer']
+        max_price = max(high_wicks) + self.design['y_lim_buffer']
         
-        self.ax.set_ylim(min_price, max_price)
-        
-        # ticks
+        self.ax.set_ylim(min_price, max_price) # set y limits
+    
+    def set_x_ticks(self, tick, price_engine):
+        """
+        Set tick positions and labels, time labels move left over time
+        """
         if self.plot_ticks:
             times = price_engine.times[tick-len(self.bars):tick]
                     
@@ -146,3 +164,8 @@ class CandlestickPlotter:
                             
             self.ax.set_xticks(tick_positions)
             self.ax.set_xticklabels(tick_times)
+            
+    def plot_tick(self, tick, price_engine):      
+        self.plot_bars(tick, price_engine)
+        self.set_y_lim(tick, price_engine)
+        self.set_x_ticks(tick, price_engine)
