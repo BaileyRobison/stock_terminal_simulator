@@ -4,6 +4,7 @@ Basic display in matplotlib
 import matplotlib.pyplot as plt
 from matplotlib.gridspec import GridSpec
 from PIL import Image, ImageTk
+import time
 
 from utils import read_yaml
 
@@ -20,7 +21,6 @@ class PlotBase:
         fig = plt.figure(facecolor=self.colors['bg'])
         fig.canvas.manager.toolbar.pack_forget() # remove toolbar and buttons
         fig.canvas.manager.window.title('TERMINAL') # window name
-        fig.set_tight_layout(True) # remove extra padding outside plot
 
         # cover entire screen        
         fig_manager = plt.get_current_fig_manager()
@@ -44,8 +44,11 @@ class PlotBase:
     def start_plot(self):
         plt.ion() # enter interactive mode
     
-    def pause(self, duration):
-        plt.pause(duration)
+    def pause(self, duration):        
+        self.fig.canvas.draw_idle()
+        self.fig.canvas.flush_events()
+    
+        time.sleep(duration)
     
     def end_plot(self):
         plt.ioff() # leave interactive mode
@@ -57,8 +60,9 @@ class CandlestickPlotter:
     Plots candlestick chart
     Takes base plot as argument
     """
-    def __init__(self, base_fig, row, col, width=1, height=1, wicks=True):
-        self.wicks = wicks
+    def __init__(self, base_fig, row, col, width=1, height=1, plot_wicks=True, plot_ticks=True):
+        self.plot_wicks = plot_wicks
+        self.plot_ticks = plot_ticks
         self.colors = read_yaml('style')
         
         self.ax = base_fig.add_subplot(row, col, width, height)
@@ -71,29 +75,74 @@ class CandlestickPlotter:
         
         plt.grid(color=self.colors['grid'], linestyle='--', alpha=0.2)
 
-    def plot_tick(self, tick, price_engine, start_tick=0):
-        """
-        Plot bar for single tick
-        """
-        # shift tick by start_tick for plotting
-        # use this for plotting, setting x ticks, time delta
-        x_tick = tick - start_tick
-        
-        prev = price_engine.prices[tick-1]
-        curr = price_engine.prices[tick]
+        self.bars = []
+        self.wicks = []
 
-        if curr > prev:
-            bar_color = self.colors['green_bar']
-        else:
-            bar_color = self.colors['red_bar']
+    def initialize_bars(self, num_bars = 50):
+        self.bars = self.ax.bar(range(num_bars), [0]*num_bars)
+        
+        buffer = 2
+        self.ax.set_xlim(-1 * buffer, num_bars + buffer)
+        
+        if self.plot_wicks: # add wicks if needed
+            self.wicks = self.ax.vlines(range(num_bars), [0]*num_bars, [0]*num_bars)
+        
+        if not self.plot_ticks:
+            self.ax.set_xticks([])
+            self.ax.set_yticks([])
+
+    def plot_tick(self, tick, price_engine):      
+        # for wicks
+        segments = []
+        colors = []
+        
+        for i, rect in enumerate(self.bars): # loop over bars and set
+            plot_tick = tick - len(self.bars) + i # bar positions
             
-        if self.wicks: # plot wicks 
-            self.ax.vlines(x_tick, price_engine.lows[tick], price_engine.highs[tick], lw=1, color=bar_color)
+            prev = price_engine.prices[plot_tick-1] # previous price for bar
+            curr = price_engine.prices[plot_tick] # current price for bar
+            
+            if curr > prev: # set color based on change
+                bar_color = self.colors['green_bar']
+            else:
+                bar_color = self.colors['red_bar']
+            colors.append(bar_color)
+            
+            rect.set_y(min(prev, curr)) # set bottom of bar
+            rect.set_height(abs(curr - prev)) # set height of bar
+            rect.set_facecolor(bar_color) # set color of bar
+            
+            segments.append([(i, price_engine.lows[plot_tick]), (i, price_engine.highs[plot_tick])])
+            
+        if self.plot_wicks: # set wick lengths and colors
+            self.wicks.set_segments(segments)
+            self.wicks.set_color(colors)
+
+        # set y limits
+        if self.plot_wicks: # include wicks in y lim
+            low_wicks = price_engine.lows[tick-len(self.bars):tick]
+            high_wicks = price_engine.highs[tick-len(self.bars):tick]
+        else:
+            low_wicks = price_engine.prices[tick-len(self.bars):tick]
+            high_wicks = price_engine.prices[tick-len(self.bars):tick]
+
+        buffer = 2
+        min_price = min(low_wicks) - buffer
+        max_price = max(high_wicks) + buffer
         
-        # plot new bar
-        self.ax.bar(x_tick, curr - prev, bottom=prev, color=bar_color, width=0.8)
-    
-        tick_delta = max([5, int(x_tick/5)]) # change spacing between ticks
-        self.ax.set_xticks(range(0, x_tick, tick_delta))
-        self.ax.set_xticklabels(price_engine.times[start_tick::tick_delta]) # get times after start_tick
+        self.ax.set_ylim(min_price, max_price)
         
+        # ticks
+        if self.plot_ticks:
+            times = price_engine.times[tick-len(self.bars):tick]
+                    
+            tick_positions = []
+            tick_times = []
+            for i in range(len(times)):
+                
+                if times[i][-2:] in ['00', '15', '30', '45']:
+                    tick_positions.append(i)
+                    tick_times.append(times[i])
+                            
+            self.ax.set_xticks(tick_positions)
+            self.ax.set_xticklabels(tick_times)

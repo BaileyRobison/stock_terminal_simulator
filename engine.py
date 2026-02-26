@@ -8,32 +8,39 @@ class Engine:
     """
     Runs everything
     """
-    def __init__(self, market):
+    def __init__(self, market):        
         self.price_engine = PriceEngine(market)
         
         self.pl = PlotBase((3,3)) # base plot
         
         # long term candle chart
-        self.long_candle_pl = CandlestickPlotter(self.pl, 0, 0, 3, 1, wicks=False)
+        self.start_tick = 400
+        self.long_candle_pl = CandlestickPlotter(self.pl, 0, 0, 3, 1, plot_wicks=False, plot_ticks=False)
+        self.long_candle_pl.initialize_bars(num_bars = self.start_tick)
         
         # short term candle chart
         self.candle_pl = CandlestickPlotter(self.pl, 1, 0, 3, 2)
+        self.candle_pl.initialize_bars(num_bars = 100)
+        
+        self.pl.fig.subplots_adjust(hspace=0)
+        
+        padding = 0.05 # remove extra padding outside plot
+        self.pl.fig.subplots_adjust(left=padding, right=1-padding, top=1-padding, bottom=padding)
         
     def run(self, ticks = 100, duration = 0.1):
-        initial_ticks = 200
-        
-        for tick in range(1, initial_ticks): # initial bars, long term only
+        for tick in range(1, self.start_tick): # initial bars
             self.price_engine.update()
-            self.long_candle_pl.plot_tick(tick, self.price_engine)  
         
         self.pl.start_plot()
         
         for tick in range(0, ticks): # plot ticks on both
-            total_tick = tick + initial_ticks # total ticks so far
+            total_tick = tick + self.start_tick # total ticks so far
             
             self.price_engine.update()
-            self.candle_pl.plot_tick(total_tick, self.price_engine, start_tick=initial_ticks)            
-            self.long_candle_pl.plot_tick(total_tick, self.price_engine)
+            self.candle_pl.plot_tick(total_tick, self.price_engine)    
+            
+            if tick % 10 == 0:
+                self.long_candle_pl.plot_tick(total_tick, self.price_engine)
             
             self.pl.pause(duration)  
             
