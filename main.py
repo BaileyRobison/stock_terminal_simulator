@@ -1,3 +1,4 @@
+
 import sys
 
 from stock import Market

@@ -2,6 +2,7 @@
 Basic display in matplotlib
 """
 import matplotlib.pyplot as plt
+from matplotlib.ticker import MaxNLocator
 from matplotlib.gridspec import GridSpec
 from PIL import Image, ImageTk
 import time
@@ -16,8 +17,6 @@ class PlotBase:
     COLORS = read_yaml('style')['colors']
     
     def __init__(self, size=(1,1)):
-        style_content = read_yaml('style')
-
         plt.switch_backend('TkAgg')
 
         fig = plt.figure(facecolor=self.COLORS['bg'])
@@ -158,6 +157,38 @@ class VolumePlotter(BarPlotter):
         max_vol *= 1.1
         
         self.ax.set_ylim(0, max_vol) # set y limits
+        
+        self.set_ytick_labels()
+        
+    def set_ytick_labels(self):
+        self.ax.yaxis.set_major_locator(MaxNLocator(integer=True, prune='lower', nbins=4))
+        yticks = self.ax.get_yticks()
+        
+        formatted_labels = []
+        for t in yticks: # format numbers            
+            num = t * 1000
+            
+            if num >= 1e6: # divide by million or thousand
+                num /= 1e6
+                suffix = 'M'
+            elif num >= 1e3:
+                num /= 1e3
+                suffix = 'k'
+            else:
+                suffix = ''
+            
+            if num >= 10: # round
+                num = round(num)
+            else: # keep decimal if only 1s place
+                num = round(num,1)
+                
+            if num.is_integer(): # convert to int if needed
+                num = int(num)
+                
+            formatted_labels.append(str(num)+suffix)
+        
+        self.ax.set_yticks(yticks)
+        self.ax.set_yticklabels(formatted_labels)
         
     def plot_tick(self, tick, price_engine):      
         self.plot_bars(tick, price_engine)
