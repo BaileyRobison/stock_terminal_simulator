@@ -13,14 +13,14 @@ class PlotBase:
     """
     Base plot, holds subplots
     """
+    COLORS = read_yaml('style')['colors']
+    
     def __init__(self, size=(1,1)):
         style_content = read_yaml('style')
-        self.colors = style_content['colors']
-        self.design = style_content['design']
 
         plt.switch_backend('TkAgg')
 
-        fig = plt.figure(facecolor=self.colors['bg'])
+        fig = plt.figure(facecolor=self.COLORS['bg'])
         fig.canvas.manager.toolbar.pack_forget() # remove toolbar and buttons
         fig.canvas.manager.window.title('TERMINAL') # window name
 
@@ -57,49 +57,133 @@ class PlotBase:
         plt.show()
 
 
-class CandlestickPlotter:
+class SubPlotBase:
+    """
+    Super class for all subplots
+    """
+    COLORS = read_yaml('style')['colors']
+    DESIGN = read_yaml('style')['design']
+    
+    def __init__(self, base_fig, row, col, width=1, height=1):
+        self.ax = base_fig.add_subplot(row, col, width, height)
+
+
+class BarPlotter(SubPlotBase):
+    """
+    Super class for plotting bars
+    Used for candlesticks and volume chart
+    """
+    def __init__(self, base_fig, row, col, width=1, height=1, plot_ticks=True):
+        super().__init__(base_fig, row, col, width, height)
+        
+        self.plot_ticks = plot_ticks
+        self.bars = []
+        
+        self.ax.set_facecolor(self.COLORS['bg']) # background color
+        
+        for side in ['bottom', 'top', 'left', 'right']: # set axes colors
+            self.ax.spines[side].set_color(self.COLORS['axes'])
+        self.ax.tick_params(axis='both', color=self.COLORS['axes'], labelcolor=self.COLORS['axes'])
+        
+        if self.DESIGN['axes_right']:
+            self.ax.yaxis.tick_right()
+        
+        line = self.DESIGN['grid_line_style']
+        alpha = self.DESIGN['grid_line_alpha']
+        plt.grid(color=self.COLORS['grid'], linestyle=line, alpha=alpha) # grid lines
+        
+    def initialize_bars(self, num_bars):
+        """
+        Initialize based on number of bars
+        """
+        self.bars = self.ax.bar(range(num_bars), [0]*num_bars)
+        
+        buffer = self.DESIGN['x_lim_buffer']
+        self.ax.set_xlim(-1 * buffer, num_bars + buffer)
+        
+        if not self.plot_ticks:
+            self.ax.set_xticks([])
+            self.ax.set_yticks([])
+        
+    def set_x_ticks(self, tick, price_engine):
+        """
+        Set tick positions and labels, time labels move left over time
+        """
+        if self.plot_ticks:
+            times = price_engine.times[tick-len(self.bars):tick]
+                
+            tick_positions = []
+            tick_times = []
+            for i in range(len(times)):
+                
+                if times[i][-2:] in ['00', '15', '30', '45']:
+                    tick_positions.append(i)
+                    tick_times.append(times[i])
+                            
+            self.ax.set_xticks(tick_positions)
+            self.ax.set_xticklabels(tick_times)
+            
+
+class VolumePlotter(BarPlotter):
+    def __init__(self, base_fig, row, col, width=1, height=1, plot_ticks=True):
+        super().__init__(base_fig, row, col, width, height, plot_ticks)
+        
+        plt.grid(alpha=0) # no grid lines
+        
+    def initialize_bars(self, num_bars = 50):
+        """
+        Initialize based on number of bars
+        """
+        super().initialize_bars(num_bars)
+        
+        for rect in self.bars:
+            rect.set_facecolor(self.COLORS['volume_bar'])
+            rect.set_alpha(self.DESIGN['volume_bar_alpha'])
+    
+    def plot_bars(self, tick, price_engine):
+        """
+        Adjust heights, positions, colors for bars
+        """       
+        for i, rect in enumerate(self.bars): # loop over bars and set
+            plot_tick = tick - len(self.bars) + i # bar positions
+            
+            vol = price_engine.volumes[plot_tick]
+            rect.set_height(vol) # set height of bar
+
+    def set_y_lim(self, tick, price_engine):
+        """
+        Scale y axis, account for whether or not we are plotting wicks
+        """
+        max_vol = max(price_engine.volumes[tick-len(self.bars):tick])
+        max_vol *= 1.1
+        
+        self.ax.set_ylim(0, max_vol) # set y limits
+        
+    def plot_tick(self, tick, price_engine):      
+        self.plot_bars(tick, price_engine)
+        self.set_y_lim(tick, price_engine)
+        self.set_x_ticks(tick, price_engine)
+    
+        
+class CandlestickPlotter(BarPlotter):
     """
     Plots candlestick chart
     Takes base plot as argument
     """
     def __init__(self, base_fig, row, col, width=1, height=1, plot_wicks=True, plot_ticks=True):
-        self.plot_wicks = plot_wicks
-        self.plot_ticks = plot_ticks
+        super().__init__(base_fig, row, col, width, height, plot_ticks)
         
-        style_content = read_yaml('style')
-        self.colors = style_content['colors']
-        self.design = style_content['design']
-        
-        self.ax = base_fig.add_subplot(row, col, width, height)
-        
-        self.ax.set_facecolor(self.colors['bg'])
-        
-        for side in ['bottom', 'top', 'left', 'right']:
-            self.ax.spines[side].set_color(self.colors['axes'])
-        self.ax.tick_params(axis='both', color=self.colors['axes'], labelcolor=self.colors['axes'])
-        
-        line = self.design['grid_line_style']
-        alpha = self.design['grid_line_alpha']
-        plt.grid(color=self.colors['grid'], linestyle=line, alpha=alpha)
-
-        self.bars = []
+        self.plot_wicks = plot_wicks        
         self.wicks = []
 
     def initialize_bars(self, num_bars = 50):
         """
         Initialize based on number of bars
         """
-        self.bars = self.ax.bar(range(num_bars), [0]*num_bars)
-        
-        buffer = self.design['x_lim_buffer']
-        self.ax.set_xlim(-1 * buffer, num_bars + buffer)
+        super().initialize_bars(num_bars)
         
         if self.plot_wicks: # add wicks if needed
             self.wicks = self.ax.vlines(range(num_bars), [0]*num_bars, [0]*num_bars)
-        
-        if not self.plot_ticks:
-            self.ax.set_xticks([])
-            self.ax.set_yticks([])
 
     def plot_bars(self, tick, price_engine):
         """
@@ -116,9 +200,9 @@ class CandlestickPlotter:
             curr = price_engine.prices[plot_tick] # current price for bar
             
             if curr > prev: # set color based on change
-                bar_color = self.colors['green_bar']
+                bar_color = self.COLORS['green_bar']
             else:
-                bar_color = self.colors['red_bar']
+                bar_color = self.COLORS['red_bar']
             colors.append(bar_color)
             
             rect.set_y(min(prev, curr)) # set bottom of bar
@@ -142,29 +226,11 @@ class CandlestickPlotter:
             low_wicks = price_engine.prices[tick-len(self.bars):tick]
             high_wicks = price_engine.prices[tick-len(self.bars):tick]
 
-        min_price = min(low_wicks) - self.design['y_lim_buffer']
-        max_price = max(high_wicks) + self.design['y_lim_buffer']
+        min_price = min(low_wicks) - self.DESIGN['y_lim_buffer']
+        max_price = max(high_wicks) + self.DESIGN['y_lim_buffer']
         
         self.ax.set_ylim(min_price, max_price) # set y limits
-    
-    def set_x_ticks(self, tick, price_engine):
-        """
-        Set tick positions and labels, time labels move left over time
-        """
-        if self.plot_ticks:
-            times = price_engine.times[tick-len(self.bars):tick]
-                    
-            tick_positions = []
-            tick_times = []
-            for i in range(len(times)):
-                
-                if times[i][-2:] in ['00', '15', '30', '45']:
-                    tick_positions.append(i)
-                    tick_times.append(times[i])
-                            
-            self.ax.set_xticks(tick_positions)
-            self.ax.set_xticklabels(tick_times)
-            
+        
     def plot_tick(self, tick, price_engine):      
         self.plot_bars(tick, price_engine)
         self.set_y_lim(tick, price_engine)

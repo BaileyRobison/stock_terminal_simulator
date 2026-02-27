@@ -4,6 +4,7 @@ colors:
   grid: "#C0C0C0"
   green_bar: "#90EE90"
   red_bar: "#FF474C"
+  volume_bar: "#4C6EF5"
 
 design:
   x_lim_buffer: 2
@@ -11,3 +12,5 @@ design:
   figure_padding: 0.05
   grid_line_style: "--"
   grid_line_alpha: 0.2
+  volume_bar_alpha: 0.8
+  axes_right: False

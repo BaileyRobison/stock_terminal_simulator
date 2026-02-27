@@ -17,5 +17,5 @@ regimes:
     df: 3
     
 volume:
-  base_volume: 1000000
+  base_volume: 100
   beta: 0.85
