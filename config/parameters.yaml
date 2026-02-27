@@ -15,3 +15,7 @@ regimes:
     mu: -0.005
     base_vol: 0.05
     df: 3
+    
+volume:
+  base_volume: 1000000
+  beta: 0.85

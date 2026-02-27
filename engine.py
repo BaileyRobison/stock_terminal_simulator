@@ -53,6 +53,8 @@ class PriceEngine:
     """
     Handles stock prices for candlestick chart
     """
+    PARAMETERS = read_yaml('parameters')
+    
     def __init__(self, market):
         self.market = market
                 
@@ -64,12 +66,15 @@ class PriceEngine:
         self.highs = [0]
         self.times = [datetime(2026,1,1,12,0).strftime(self.time_format)]
         
+        self.volumes = [self.PARAMETERS['volume']['base_volume']]
+        
     def update(self):
         # update stock price
         self.market.update_stock()
         self.prices.append(self.market.price)
 
         self.random_wicks()
+        self.calculate_volume()
 
         # update time
         new_time = datetime.strptime(self.times[-1], self.time_format)
@@ -104,3 +109,19 @@ class PriceEngine:
         low = min(open_price, close_price) - lower_wick
         self.lows.append(low)
         self.highs.append(high)
+        
+    def calculate_volume(self):
+        beta = self.PARAMETERS['volume']['beta']
+        base_volume = self.PARAMETERS['volume']['base_volume']
+        
+        raw_vol = base_volume
+        raw_vol *= (1 + 5*self.market.volatility) # effect of volatility
+        raw_vol *= (1 + 3*abs(self.prices[-1] - self.prices[-2])) # price change
+        raw_vol *= np.random.lognormal(mean=0, sigma=0.25) # noise
+        
+        # clustering
+        last_vol = self.volumes[-1]
+        volume = (beta * last_vol) + (raw_vol * (1 - beta))
+        
+        self.volumes.append(volume)
+        
