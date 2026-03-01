@@ -184,6 +184,8 @@ class VolumePlotter(BarPlotter):
                 
             formatted_labels.append(str(num)+suffix)
         
+        formatted_labels[-1] = '' # hide top label to avoid overlap
+        
         self.ax.set_yticks(yticks)
         self.ax.set_yticklabels(formatted_labels)
         
