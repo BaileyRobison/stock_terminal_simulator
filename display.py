@@ -5,7 +5,6 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from matplotlib.gridspec import GridSpec
 from PIL import Image, ImageTk
-import time
 
 from utils import read_yaml
 
@@ -45,11 +44,9 @@ class PlotBase:
     def start_plot(self):
         plt.ion() # enter interactive mode
     
-    def pause(self, duration):        
+    def refresh(self):        
         self.fig.canvas.draw_idle()
         self.fig.canvas.flush_events()
-    
-        time.sleep(duration)
     
     def end_plot(self):
         plt.ioff() # leave interactive mode

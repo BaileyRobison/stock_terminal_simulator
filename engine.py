@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
 import numpy as np
+import time
 
 from display import PlotBase, CandlestickPlotter, VolumePlotter
 from utils import read_yaml
@@ -39,7 +40,10 @@ class Engine:
         
         self.pl.start_plot()
         
+        next_run = time.perf_counter() # start time before execution
+        
         for tick in range(0, ticks): # plot ticks on both
+            next_run += duration # time for next loop execution
             total_tick = tick + self.start_tick # total ticks so far
             
             self.price_engine.update()
@@ -49,7 +53,11 @@ class Engine:
             if tick % self.long_term_update == 0:
                 self.long_candle_pl.plot_tick(total_tick, self.price_engine)
             
-            self.pl.pause(duration)  
+            self.pl.refresh() # redraw updated plot
+            
+            sleep_time = next_run - time.perf_counter() # adjust sleep time
+            if sleep_time > 0: # account for execution taking longer than delay
+                time.sleep(sleep_time)
             
             
         self.pl.end_plot()

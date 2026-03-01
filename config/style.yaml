@@ -13,4 +13,4 @@ design:
   grid_line_style: "--"
   grid_line_alpha: 0.2
   volume_bar_alpha: 0.8
-  axes_right: False
+  axes_right: True

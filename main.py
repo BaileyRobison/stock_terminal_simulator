@@ -1,4 +1,3 @@
-
 import sys
 
 from stock import Market
@@ -20,4 +19,4 @@ settings = {
 }
 
 eng = Engine(market, settings)
-eng.run(ticks = 100, duration = 0.0005)
+eng.run(ticks = 100, duration = 0.1)
