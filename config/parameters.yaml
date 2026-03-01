@@ -1,8 +1,8 @@
 regimes:
   neutral:
     mu: 0.0
-    base_vol: 0.015
-    df: 15
+    base_vol: 0.01
+    df: 10
   bull:
     mu: 0.002
     base_vol: 0.02
@@ -15,3 +15,7 @@ regimes:
     mu: -0.005
     base_vol: 0.05
     df: 3
+    
+volume:
+  base_volume: 100
+  beta: 0.85

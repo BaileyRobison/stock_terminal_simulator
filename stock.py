@@ -29,12 +29,12 @@ class Market:
         # market variables
         self.mu = 0 # drift upward or downward
         self.base_vol = 0 # market stability
-        self.df = 0 # rarity of crahses and spikes
+        self.df = 0 # rarity of crashes and spikes
    
         # set initial market regime
         self.set_regime('neutral')
         self.volatility = self.base_vol
-    
+        
     def __getattr__(self, attr): # only runs if missing attribute
         if attr == 'price':
             return self.stock.price
