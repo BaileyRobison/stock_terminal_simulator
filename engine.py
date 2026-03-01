@@ -12,14 +12,10 @@ class Engine:
     """
     def __init__(self, market, settings = {}):  
         self.price_engine = PriceEngine(market)
-        self.long_term_update = settings.get('long_term_update', 10)
         
         self.pl = PlotBase((5,3)) # base plot
         
-        # long term candle chart
-        self.start_tick = settings.get('long_term_bars', 400)
-        self.long_candle_pl = CandlestickPlotter(self.pl, 0, 0, 3, 1, plot_wicks=False, plot_ticks=False)
-        self.long_candle_pl.initialize_bars(num_bars = self.start_tick)
+        self.start_tick = settings.get('bars', 100) + 1
         
         # short term candle chart
         self.candle_pl = CandlestickPlotter(self.pl, 1, 0, 3, 3)
@@ -49,9 +45,6 @@ class Engine:
             self.price_engine.update()
             self.candle_pl.plot_tick(total_tick, self.price_engine)    
             self.volume_pl.plot_tick(total_tick, self.price_engine)    
-            
-            if tick % self.long_term_update == 0:
-                self.long_candle_pl.plot_tick(total_tick, self.price_engine)
             
             self.pl.refresh() # redraw updated plot
             

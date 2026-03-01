@@ -14,8 +14,6 @@ market.set_stock(name = 'ABX')
 
 settings = {
     'bars': 100,
-    'long_term_bars': 400,    
-    'long_term_update': 10,
 }
 
 eng = Engine(market, settings)
