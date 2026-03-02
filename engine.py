@@ -52,7 +52,6 @@ class Engine:
             if sleep_time > 0: # account for execution taking longer than delay
                 time.sleep(sleep_time)
             
-            
         self.pl.end_plot()
         
 class PriceEngine:

@@ -5,6 +5,8 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 from matplotlib.gridspec import GridSpec
 from PIL import Image, ImageTk
+import numpy as np
+import pandas as pd
 
 from utils import read_yaml
 
@@ -84,8 +86,8 @@ class BarPlotter(SubPlotBase):
         if self.DESIGN['axes_right']:
             self.ax.yaxis.tick_right()
         
-        line = self.DESIGN['grid_line_style']
-        alpha = self.DESIGN['grid_line_alpha']
+        line = self.DESIGN['grid_line']['style']
+        alpha = self.DESIGN['grid_line']['alpha']
         plt.grid(color=self.COLORS['grid'], linestyle=line, alpha=alpha) # grid lines
         
     def initialize_bars(self, num_bars):
@@ -94,7 +96,7 @@ class BarPlotter(SubPlotBase):
         """
         self.bars = self.ax.bar(range(num_bars), [0]*num_bars)
         
-        buffer = self.DESIGN['x_lim_buffer']
+        buffer = self.DESIGN['lim_buffer']['x_axis']
         self.ax.set_xlim(-1 * buffer, num_bars + buffer)
         
         if not self.plot_ticks:
@@ -121,8 +123,16 @@ class BarPlotter(SubPlotBase):
             
 
 class VolumePlotter(BarPlotter):
-    def __init__(self, base_fig, row, col, width=1, height=1, plot_ticks=True):
+    def __init__(self, base_fig, row, col, width=1, height=1, plot_ticks=True, plot_mean=True):
         super().__init__(base_fig, row, col, width, height, plot_ticks)
+        
+        self.plot_mean = plot_mean
+        
+        # update line when plotting mean
+        line = self.DESIGN['volume_mean']['style']
+        alpha = self.DESIGN['volume_mean']['alpha']
+        color = self.COLORS['mean_line']
+        self.mean_line, = self.ax.plot([], [], linestyle=line, alpha=alpha, color=color)
         
         plt.grid(alpha=0) # no grid lines
         
@@ -189,9 +199,22 @@ class VolumePlotter(BarPlotter):
         self.ax.set_yticks(yticks)
         self.ax.set_yticklabels(formatted_labels)
         
+    def plot_mean_line(self, tick, price_engine):
+        mean_window = 20
+        mean = np.median(price_engine.volumes[tick-mean_window:tick])
+        
+        buffer = self.DESIGN['lim_buffer']['x_axis']
+        x_vals = [-1*buffer, len(self.bars)+buffer]
+        y_vals = [mean, mean]
+        self.mean_line.set_data(x_vals, y_vals)
+        
     def plot_tick(self, tick, price_engine):      
         self.plot_bars(tick, price_engine)
         self.set_y_lim(tick, price_engine)
+        
+        if self.plot_mean:
+            self.plot_mean_line(tick, price_engine)
+        
         self.set_x_ticks(tick, price_engine)
     
         
@@ -256,8 +279,8 @@ class CandlestickPlotter(BarPlotter):
             low_wicks = price_engine.prices[tick-len(self.bars):tick]
             high_wicks = price_engine.prices[tick-len(self.bars):tick]
 
-        min_price = min(low_wicks) - self.DESIGN['y_lim_buffer']
-        max_price = max(high_wicks) + self.DESIGN['y_lim_buffer']
+        min_price = min(low_wicks) - self.DESIGN['lim_buffer']['y_axis']
+        max_price = max(high_wicks) + self.DESIGN['lim_buffer']['y_axis']
         
         self.ax.set_ylim(min_price, max_price) # set y limits
         
