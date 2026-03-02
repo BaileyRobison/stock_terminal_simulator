@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 import numpy as np
 import time
 
-from display import PlotBase, CandlestickPlotter, VolumePlotter
+from display import PlotBase, CandlestickPlotter, VolumePlotter, HeaderPane
 from utils import read_yaml
 
 
@@ -16,6 +16,10 @@ class Engine:
         self.pl = PlotBase((5,3)) # base plot
         
         self.start_tick = settings.get('bars', 100) + 1
+        
+        # header with price and stats
+        self.header_pane = HeaderPane(self.pl, 0, 0, 3, 1)
+        self.header_pane.set_stock(self.price_engine)
         
         # short term candle chart
         self.candle_pl = CandlestickPlotter(self.pl, 1, 0, 3, 3)
@@ -43,6 +47,7 @@ class Engine:
             total_tick = tick + self.start_tick + 1 # total ticks so far
             
             self.price_engine.update()
+            self.header_pane.update(self.price_engine)
             self.candle_pl.plot_tick(total_tick, self.price_engine)    
             self.volume_pl.plot_tick(total_tick, self.price_engine)    
             

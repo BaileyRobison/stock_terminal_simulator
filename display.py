@@ -65,6 +65,44 @@ class SubPlotBase:
         self.ax = base_fig.add_subplot(row, col, width, height)
 
 
+class HeaderPane(SubPlotBase):
+    """
+    Header with stock name, stats
+    """
+    def __init__(self, base_fig, row, col, width=1, height=1):
+        super().__init__(base_fig, row, col, width, height)
+
+        self.ax.axis("off")
+        self.ax.set_facecolor(self.COLORS['bg'])
+        
+        self.price_text = self.ax.text(
+            0.06, 0.5,
+            "$",
+            transform=self.ax.transAxes,
+            ha="left",
+            va="center",
+            fontsize=20,
+            fontweight="bold",
+            color='white',
+        )
+        
+    def set_stock(self, price_engine):
+        self.ax.text( # stock ticker
+            0.05, 0.9,
+            price_engine.market.stock.name,
+            transform=self.ax.transAxes,
+            ha="left",
+            va="center",
+            fontsize=40,
+            fontweight="bold",
+            color="white",
+        )
+        
+    def update(self, price_engine):
+        text = "${0:.2f}".format(price_engine.prices[-1])
+        self.price_text.set_text(text)
+
+    
 class BarPlotter(SubPlotBase):
     """
     Super class for plotting bars
