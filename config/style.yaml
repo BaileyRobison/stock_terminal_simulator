@@ -4,6 +4,7 @@ colors:
   grid: "#C0C0C0"
   green_bar: "#90EE90"
   red_bar: "#FF474C"
+  price_line: "#AAAAAA"
   volume_bar: "#4C6EF5"
   mean_line: "#7F8C8D"
 
@@ -16,6 +17,9 @@ design:
   grid_line:
     style: "--"
     alpha: 0.2
+  last_price:
+    style: ":"
+    alpha: 0.9
   volume_bar_alpha: 0.8
   volume_mean:
     style: "-"

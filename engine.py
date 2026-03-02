@@ -40,7 +40,7 @@ class Engine:
         
         for tick in range(0, ticks): # plot ticks on both
             next_run += duration # time for next loop execution
-            total_tick = tick + self.start_tick # total ticks so far
+            total_tick = tick + self.start_tick + 1 # total ticks so far
             
             self.price_engine.update()
             self.candle_pl.plot_tick(total_tick, self.price_engine)    

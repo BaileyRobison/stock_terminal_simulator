@@ -6,7 +6,6 @@ from matplotlib.ticker import MaxNLocator
 from matplotlib.gridspec import GridSpec
 from PIL import Image, ImageTk
 import numpy as np
-import pandas as pd
 
 from utils import read_yaml
 
@@ -226,8 +225,16 @@ class CandlestickPlotter(BarPlotter):
     def __init__(self, base_fig, row, col, width=1, height=1, plot_wicks=True, plot_ticks=True):
         super().__init__(base_fig, row, col, width, height, plot_ticks)
         
+        self.plot_ticks = plot_ticks
         self.plot_wicks = plot_wicks        
         self.wicks = []
+
+        line = self.DESIGN['last_price']['style']
+        alpha = self.DESIGN['last_price']['alpha']
+        color = self.COLORS['price_line']
+        self.price_line, = self.ax.plot([], [], linestyle=line, alpha=alpha, color=color)
+
+        self.price_marker = None
 
     def initialize_bars(self, num_bars = 50):
         """
@@ -237,6 +244,21 @@ class CandlestickPlotter(BarPlotter):
         
         if self.plot_wicks: # add wicks if needed
             self.wicks = self.ax.vlines(range(num_bars), [0]*num_bars, [0]*num_bars)
+            
+        if self.plot_ticks: # last price marker
+            self.price_marker = self.ax.text(
+                len(self.bars) + self.DESIGN['lim_buffer']['x_axis'],
+                0,
+                "",
+                ha='left',
+                va='center',
+                color=self.COLORS['axes'],
+                bbox=dict(
+                    boxstyle="round,pad=0.2",
+                    facecolor=self.COLORS['bg'],
+                    edgecolor=self.COLORS['axes']
+                )
+            )
 
     def plot_bars(self, tick, price_engine):
         """
@@ -284,7 +306,24 @@ class CandlestickPlotter(BarPlotter):
         
         self.ax.set_ylim(min_price, max_price) # set y limits
         
+    def last_price_marker(self, price_engine):
+        last_price = price_engine.prices[-1]
+        
+        # draw line
+        buffer = self.DESIGN['lim_buffer']['x_axis']
+        x_vals = [len(self.bars) - 1, len(self.bars)+buffer]
+        y_vals = [last_price, last_price]        
+        self.price_line.set_data(x_vals, y_vals)
+        
+        # set marker
+        self.price_marker.set_position((len(self.bars)+buffer, last_price))
+        self.price_marker.set_text('{0:.2f}'.format(last_price))
+        
     def plot_tick(self, tick, price_engine):      
         self.plot_bars(tick, price_engine)
         self.set_y_lim(tick, price_engine)
+        
+        if self.plot_ticks:
+            self.last_price_marker(price_engine)
+        
         self.set_x_ticks(tick, price_engine)
