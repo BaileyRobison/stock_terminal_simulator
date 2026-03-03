@@ -76,14 +76,39 @@ class HeaderPane(SubPlotBase):
         self.ax.set_facecolor(self.COLORS['bg'])
         
         self.price_text = self.ax.text(
-            0.06, 0.5,
+            0.05, 0.5,
             "$",
             transform=self.ax.transAxes,
             ha="left",
             va="center",
             fontsize=20,
             fontweight="bold",
-            color='white',
+            color=self.COLORS['axes'],
+        )
+        
+        self.stats_text = self.ax.text(
+            0.4, 0.5,
+            "#",
+            transform=self.ax.transAxes,
+            ha="left",
+            va="center",
+            fontsize=20,
+            fontweight="bold",
+            color=self.COLORS['axes'],
+        )
+        
+        # labels
+        self.spacing = "    "
+        text = self.spacing.join(['24h High', '24h Low', '24h Volume'])
+        self.ax.text(
+            0.4, 0.7,
+            text,
+            transform=self.ax.transAxes,
+            ha="left",
+            va="center",
+            fontsize=20,
+            fontweight="bold",
+            color=self.COLORS['header_text'],
         )
         
     def set_stock(self, price_engine):
@@ -95,13 +120,29 @@ class HeaderPane(SubPlotBase):
             va="center",
             fontsize=40,
             fontweight="bold",
-            color="white",
+            color=self.COLORS['axes'],
         )
         
     def update(self, price_engine):
-        text = "${0:.2f}".format(price_engine.prices[-1])
+        # price
+        current_price = price_engine.prices[-1]
+        percent_change = (current_price - price_engine.prices[0]) / price_engine.prices[0] * 100
+        
+        text = "${0:.2f} ({1:.2f}%)".format(current_price, percent_change)
         self.price_text.set_text(text)
-
+        
+        # stats
+        window = 20
+        high_price = max(price_engine.prices[-1*window:])
+        low_price = min(price_engine.prices[-1*window:])
+        tot_vol = sum(price_engine.volumes[-1*window:])
+        
+        stats = []
+        for s in [high_price, low_price, tot_vol]:
+            stats.append("{0:.2f}".format(s))
+        
+        self.stats_text.set_text(self.spacing.join(stats))
+        
     
 class BarPlotter(SubPlotBase):
     """

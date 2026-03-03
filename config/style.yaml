@@ -7,6 +7,7 @@ colors:
   price_line: "#AAAAAA"
   volume_bar: "#4C6EF5"
   mean_line: "#7F8C8D"
+  header_text: "#7F8C8D"
 
 design:
   axes_right: True
