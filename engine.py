@@ -2,7 +2,9 @@ from datetime import datetime, timedelta
 import numpy as np
 import time
 
-from display import PlotBase, CandlestickPlotter, VolumePlotter, HeaderPane
+from display.base import PlotBase
+from display.bar import CandlestickPlotter, VolumePlotter
+from display.header import HeaderPane
 from utils import read_yaml
 
 
