@@ -75,52 +75,41 @@ class HeaderPane(SubPlotBase):
         self.ax.axis("off")
         self.ax.set_facecolor(self.COLORS['bg'])
         
-        self.price_text = self.ax.text(
-            0.05, 0.5,
-            "$",
-            transform=self.ax.transAxes,
-            ha="left",
-            va="center",
-            fontsize=20,
-            fontweight="bold",
-            color=self.COLORS['axes'],
-        )
-        
-        self.stats_text = self.ax.text(
-            0.4, 0.5,
-            "#",
-            transform=self.ax.transAxes,
-            ha="left",
-            va="center",
-            fontsize=20,
-            fontweight="bold",
-            color=self.COLORS['axes'],
-        )
+        self.price_text = self.create_text(0.05, 0.5)
+        self.stats_text = self.create_text(0.4, 0.5)
         
         # labels
         self.spacing = "    "
-        text = self.spacing.join(['24h High', '24h Low', '24h Volume'])
-        self.ax.text(
-            0.4, 0.7,
-            text,
+        text = self.spacing.join(['24h High', '24h Low', '24h Volume'])        
+        _ = self.create_text(0.4, 0.7, text=text, color='header_text')
+        
+    def create_text(self, x, y, **kwargs):
+        """
+        Used to initialize text
+        """
+        text = kwargs.get('text', '')
+        color = kwargs.get('color', 'axes')
+        fontsize = kwargs.get('fontsize', 'small_font')
+        
+        return self.ax.text(
+            x, y, text,
             transform=self.ax.transAxes,
             ha="left",
             va="center",
-            fontsize=20,
+            fontsize=self.DESIGN['header'][fontsize],
             fontweight="bold",
-            color=self.COLORS['header_text'],
-        )
+            color=self.COLORS[color],
+        )        
         
     def set_stock(self, price_engine):
-        self.ax.text( # stock ticker
-            0.05, 0.9,
-            price_engine.market.stock.name,
-            transform=self.ax.transAxes,
-            ha="left",
-            va="center",
-            fontsize=40,
-            fontweight="bold",
-            color=self.COLORS['axes'],
+        """
+        Set name of stock
+        """
+        _ = self.create_text(
+            0.05,
+            0.9,
+            text = price_engine.market.stock.name,
+            fontsize='large_font'
         )
         
     def update(self, price_engine):

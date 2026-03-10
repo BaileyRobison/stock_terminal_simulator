@@ -25,3 +25,6 @@ design:
   volume_mean:
     style: "-"
     alpha: 0.5
+  header:
+    large_font: 40
+    small_font: 20
