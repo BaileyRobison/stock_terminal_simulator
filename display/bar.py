@@ -5,8 +5,9 @@ import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
 import numpy as np
 
-from display.base import SubPlotBase
-        
+from display.base import SubPlotBase     
+from utils import format_num_display
+
     
 class BarPlotter(SubPlotBase):
     """
@@ -115,26 +116,8 @@ class VolumePlotter(BarPlotter):
         
         formatted_labels = []
         for t in yticks: # format numbers            
-            num = t * 1000
-            
-            if num >= 1e6: # divide by million or thousand
-                num /= 1e6
-                suffix = 'M'
-            elif num >= 1e3:
-                num /= 1e3
-                suffix = 'k'
-            else:
-                suffix = ''
-            
-            if num >= 10: # round
-                num = round(num)
-            else: # keep decimal if only 1s place
-                num = round(num,1)
-                
-            if num.is_integer(): # convert to int if needed
-                num = int(num)
-                
-            formatted_labels.append(str(num)+suffix)
+            f_num = format_num_display(t * 1000) # format for display
+            formatted_labels.append(f_num)
         
         formatted_labels[-1] = '' # hide top label to avoid overlap
         

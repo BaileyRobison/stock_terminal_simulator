@@ -2,6 +2,7 @@
 Class to display stock ticker header
 """
 from display.base import SubPlotBase
+from utils import format_num_display
 
 
 class HeaderPane(SubPlotBase):
@@ -72,4 +73,4 @@ class HeaderPane(SubPlotBase):
         # update text
         self.high_text.set_text("{0:.2f}".format(high_price))
         self.low_text.set_text("{0:.2f}".format(low_price))
-        self.volume_text.set_text("{0:.2f}".format(tot_vol))
+        self.volume_text.set_text(format_num_display(tot_vol, digits=2))
