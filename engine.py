@@ -15,7 +15,7 @@ class Engine:
     def __init__(self, market, settings = {}):  
         self.price_engine = PriceEngine(market)
         
-        self.pl = PlotBase((5,3)) # base plot
+        self.pl = PlotBase((6,3)) # base plot
         
         self.start_tick = settings.get('bars', 100) + 1
         
@@ -24,11 +24,11 @@ class Engine:
         self.header_pane.set_stock(self.price_engine)
         
         # short term candle chart
-        self.candle_pl = CandlestickPlotter(self.pl, 1, 0, 3, 3)
+        self.candle_pl = CandlestickPlotter(self.pl, 1, 0, 3, 4)
         self.candle_pl.initialize_bars(num_bars = settings.get('bars', 100))
         
         # volume plot
-        self.volume_pl = VolumePlotter(self.pl, 4, 0, 3, 1)
+        self.volume_pl = VolumePlotter(self.pl, 5, 0, 3, 1)
         self.volume_pl.initialize_bars(num_bars = settings.get('bars', 100))
         
         self.pl.fig.subplots_adjust(hspace=0)

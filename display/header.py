@@ -16,15 +16,16 @@ class HeaderPane(SubPlotBase):
         self.ax.set_facecolor(self.COLORS['bg'])
         
         # stock name and price
-        self.stock_text = self.create_text(0.05, 0.9, fontsize='large_font')
-        self.price_text = self.create_text(0.05, 0.5)
+        self.stock_text = self.create_text(0.05, 0.575, fontsize='ticker_font')
+        self.price_text = self.create_text(0.2, 0.7, fontsize='price_font')
+        self.change_text = self.create_text(0.2, 0.45)
         
         # stat labels
-        stat_x = [0.4, 0.5, 0.6] # position of stats
+        stat_x = [0.4, 0.48, 0.56] # position of stats
         stat_y = 0.7
-        _ = self.create_text(stat_x[0], stat_y, text='24h High', color='header_text')
-        _ = self.create_text(stat_x[1], stat_y, text='24h Low', color='header_text')
-        _ = self.create_text(stat_x[2], stat_y, text='24h Volume', color='header_text')
+        _ = self.create_text(stat_x[0], stat_y, text='High', color='header_text', fontsize='stat_font')
+        _ = self.create_text(stat_x[1], stat_y, text='Low', color='header_text', fontsize='stat_font')
+        _ = self.create_text(stat_x[2], stat_y, text='Volume', color='header_text', fontsize='stat_font')
         
         # stat text
         stat_y = 0.5
@@ -38,7 +39,7 @@ class HeaderPane(SubPlotBase):
         """
         text = kwargs.get('text', '')
         color = kwargs.get('color', 'axes')
-        fontsize = kwargs.get('fontsize', 'small_font')
+        fontsize = kwargs.get('fontsize', 'text_font')
         
         return self.ax.text(
             x, y, text,
@@ -59,10 +60,20 @@ class HeaderPane(SubPlotBase):
     def update(self, price_engine):
         # price
         current_price = price_engine.prices[-1]
-        percent_change = (current_price - price_engine.prices[0]) / price_engine.prices[0] * 100
+        self.price_text.set_text('${0:.2f}'.format(current_price))
         
-        text = "${0:.2f} ({1:.2f}%)".format(current_price, percent_change)
-        self.price_text.set_text(text)
+        # price change
+        price_change = current_price - price_engine.prices[0]
+        percent_change = price_change / price_engine.prices[0] * 100
+        
+        text = "${0:.2f} ({1:.2f}%)".format(price_change, percent_change)
+        self.change_text.set_text(text)
+        
+        if price_change > 0: # set color based on change
+            bar_color = self.COLORS['green_bar']
+        else:
+            bar_color = self.COLORS['red_bar']
+        self.change_text.set_color(bar_color)
         
         # stats
         window = 20

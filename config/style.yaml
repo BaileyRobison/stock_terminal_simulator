@@ -26,5 +26,7 @@ design:
     style: "-"
     alpha: 0.5
   header:
-    large_font: 40
-    small_font: 20
+    ticker_font: 60
+    price_font: 35
+    text_font: 20
+    stat_font: 14

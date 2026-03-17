@@ -11,6 +11,7 @@ else:
 market = Market()
 market.set_regime(regime)
 market.set_stock(name = 'ABX')
+market.stock.set_price(110)
 
 settings = {
     'bars': 100,
