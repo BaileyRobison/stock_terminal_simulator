@@ -5,7 +5,7 @@ import time
 from display.base import PlotBase
 from display.bar import CandlestickPlotter, VolumePlotter
 from display.header import HeaderPane
-from utils import read_yaml
+from utils import read_yaml, format_num_display
 
 
 class Engine:
@@ -80,18 +80,23 @@ class PriceEngine:
         
         self.volumes = [self.PARAMETERS['volume']['base_volume']]
         
+        self.trades = [] # (time, price, size)
+        
     def update(self):
+        # update time
+        new_time = datetime.strptime(self.times[-1], self.time_format)
+        new_time += timedelta(minutes = self.time_step)
+        self.times.append(new_time.strftime(self.time_format))
+
         # update stock price
         self.market.update_stock()
         self.prices.append(self.market.price)
 
         self.random_wicks()
-        self.calculate_volume()
 
-        # update time
-        new_time = datetime.strptime(self.times[-1], self.time_format)
-        new_time += timedelta(minutes = self.time_step)
-        self.times.append(new_time.strftime(self.time_format))
+        self.calculate_volume()
+        
+        self.update_trades()
         
     def random_wicks(self):
         open_price = self.prices[-2]
@@ -136,4 +141,37 @@ class PriceEngine:
         volume = (beta * last_vol) + (raw_vol * (1 - beta))
         
         self.volumes.append(volume)
+
+    def update_trades(self):
+        n_trades = np.random.poisson(lam=2) # number of trades to generate
+        
+        # how many seconds have elapsed
+        current_time = datetime.strptime(self.times[-1], self.time_format)
+        old_time = current_time - timedelta(minutes = self.time_step)
+        num_seconds = (current_time - old_time).total_seconds()
+        
+        # generate all elements of trade
+        trade_times = []
+        trade_prices = []
+        trade_vols = []
+        for n in range(n_trades):
+            # random new time, between last time and current time
+            secs = np.random.randint(0, num_seconds) # random number of seconds
+            trade_time = old_time + timedelta(seconds = secs)
+            trade_times.append(trade_time.strftime('%H:%M:%S'))
+            
+            # random price between high and low wicks
+            trade_price = np.random.uniform(self.lows[-1], self.highs[-1])
+            trade_prices.append('{0:.2f}'.format(trade_price))
+            
+            # volume
+            max_vol = self.volumes[-1] / n_trades # max volume this trade can have
+            volume = np.random.uniform(0, max_vol)
+            trade_vols.append(format_num_display(volume))
+            
+        trade_times.sort() # sort to add to trade log in order
+        
+        # build trades
+        for i in range(n_trades):
+            self.trades.append((trade_times[i], trade_prices[i], trade_vols[i]))
         
