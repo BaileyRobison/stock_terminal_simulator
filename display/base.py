@@ -17,7 +17,7 @@ class PlotBase:
     def __init__(self, size=(1,1)):
         plt.switch_backend('TkAgg')
 
-        fig = plt.figure(facecolor=self.COLORS['bg'])
+        fig = plt.figure(facecolor=self.COLORS['bg'], constrained_layout=False)
         fig.canvas.manager.toolbar.pack_forget() # remove toolbar and buttons
         fig.canvas.manager.window.title('TERMINAL') # window name
 
@@ -30,7 +30,7 @@ class PlotBase:
         fig.canvas.manager.window.iconphoto(False, white_image_tk) # replace matplotlib logo
 
         self.fig = fig
-        self.gs = GridSpec(size[0], size[1], figure=self.fig)
+        self.gs = GridSpec(size[0], size[1], figure=self.fig, left=0.01, right=0.99, top=1, bottom=0.05, hspace=0)
         
     def add_subplot(self, row, col, width=1, height=1):
         """

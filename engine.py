@@ -5,6 +5,7 @@ import time
 from display.base import PlotBase
 from display.bar import CandlestickPlotter, VolumePlotter
 from display.header import HeaderPane
+from display.trade_book import TradeBook
 from utils import read_yaml, format_num_display
 
 
@@ -15,21 +16,23 @@ class Engine:
     def __init__(self, market, settings = {}):  
         self.price_engine = PriceEngine(market)
         
-        self.pl = PlotBase((6,3)) # base plot
+        self.pl = PlotBase((6,6)) # base plot
         
         self.start_tick = settings.get('bars', 100) + 1
         
         # header with price and stats
-        self.header_pane = HeaderPane(self.pl, 0, 0, 3, 1)
+        self.header_pane = HeaderPane(self.pl, 0, 0, 5, 1)
         self.header_pane.set_stock(self.price_engine)
         
         # short term candle chart
-        self.candle_pl = CandlestickPlotter(self.pl, 1, 0, 3, 4)
+        self.candle_pl = CandlestickPlotter(self.pl, 1, 0, 5, 4)
         self.candle_pl.initialize_bars(num_bars = settings.get('bars', 100))
         
         # volume plot
-        self.volume_pl = VolumePlotter(self.pl, 5, 0, 3, 1)
+        self.volume_pl = VolumePlotter(self.pl, 5, 0, 5, 1)
         self.volume_pl.initialize_bars(num_bars = settings.get('bars', 100))
+        
+        self.trade_book = TradeBook(self.pl, 1, 5, 1, 2)
         
         self.pl.fig.subplots_adjust(hspace=0)
         
@@ -60,7 +63,8 @@ class Engine:
                 time.sleep(sleep_time)
             
         self.pl.end_plot()
-        
+
+
 class PriceEngine:
     """
     Handles stock prices for candlestick chart
