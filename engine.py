@@ -5,7 +5,7 @@ import time
 from display.base import PlotBase
 from display.bar import CandlestickPlotter, VolumePlotter
 from display.header import HeaderPane
-from display.trade_book import TradeBook, OrderBook
+from display.text_window import TradeBook, OrderBook
 from utils import read_yaml, format_num_display
 
 

@@ -4,25 +4,17 @@ Panel which displays the trades that have taken place
 import matplotlib.pyplot as plt
 from display.base import SubPlotBase
 
-class TradeBook(SubPlotBase):
+
+class TextPlotter(SubPlotBase):
+    """
+    Used to plot text-based subplots
+    """
     def __init__(self, base_fig, row, col, width=1, height=1):
         super().__init__(base_fig, row, col, width, height)
-        
+    
         for side in ['bottom', 'top', 'left', 'right']: # set axes colors
             self.ax.spines[side].set_color(self.COLORS['axes'])
         self.ax.tick_params(axis='both', color=self.COLORS['axes'], labelcolor=self.COLORS['axes'])
-        
-        # plot header
-        _ = self._plot_header_text(0.05, 0.965, "Time",  ha='left')
-        _ = self._plot_header_text(0.6, 0.965, "Price", ha='right')
-        _ = self._plot_header_text(0.95, 0.965, "Size",  ha='right')
-        
-        self.ax.axhline(0.9, color='gray', linewidth=0.5) # line under header
-        
-        # initialize trade text
-        self.max_rows = 16
-        self.trade_rows = []
-        self._init_trade_text()
         
         plt.grid(alpha=0) # no grid lines
         self.ax.set_xticks([])
@@ -44,7 +36,24 @@ class TradeBook(SubPlotBase):
             fontweight="bold",
             color=self.COLORS['header_text'],
         )
-    
+        
+
+class TradeBook(TextPlotter):
+    def __init__(self, base_fig, row, col, width=1, height=1):
+        super().__init__(base_fig, row, col, width, height)
+                
+        # plot header
+        _ = self._plot_header_text(0.05, 0.97, "Time",  ha='left')
+        _ = self._plot_header_text(0.6, 0.97, "Price", ha='right')
+        _ = self._plot_header_text(0.95, 0.97, "Size",  ha='right')
+        
+        self.ax.axhline(0.925, color='gray', linewidth=0.5) # line under header
+        
+        # initialize trade text
+        self.max_rows = 16
+        self.trade_rows = []
+        self._init_trade_text()
+
     def _init_trade_text(self):
         """
         Initialize trade text with empty string, update later
@@ -83,14 +92,10 @@ class TradeBook(SubPlotBase):
                 self.trade_rows[i].set_text(text)
             
             
-class OrderBook(SubPlotBase):
+class OrderBook(TextPlotter):
     def __init__(self, base_fig, row, col, width=1, height=1):
         super().__init__(base_fig, row, col, width, height)
-        
-        for side in ['bottom', 'top', 'left', 'right']: # set axes colors
-            self.ax.spines[side].set_color(self.COLORS['axes'])
-            self.ax.tick_params(axis='both', color=self.COLORS['axes'], labelcolor=self.COLORS['axes'])
-            
+                    
         # plot header
         _ = self._plot_header_text(0.2, 0.965, "Bids",  ha='left')
         _ = self._plot_header_text(0.8, 0.965, "Asks", ha='right')
@@ -102,28 +107,7 @@ class OrderBook(SubPlotBase):
         self.bid_rows = []
         self.ask_rows = []
         self._init_bid_ask_text()
-
-        plt.grid(alpha=0) # no grid lines
-        self.ax.set_xticks([])
-        self.ax.set_yticks([])
         
-        self.ax.set_xlim(0, 1)
-        self.ax.set_ylim(0, 1)
-        
-    def _plot_header_text(self, x, y, text, ha='right'):
-        """
-        Used to initialize text
-        """
-        return self.ax.text(
-            x, y, text,
-            transform=self.ax.transAxes,
-            ha=ha,
-            va="top",
-            fontsize=self.DESIGN['header']['stat_font'],
-            fontweight="bold",
-            color=self.COLORS['header_text'],
-        )
-    
     def _init_bid_ask_text(self):
         """
         Initialize order book text with empty strings, update later
@@ -162,6 +146,9 @@ class OrderBook(SubPlotBase):
             self.ask_rows.append(ask_txt)
 
     def update_book(self, price_engine):
+        """
+        Update text in order book from price engine
+        """
         bids = price_engine.bids
         asks = price_engine.asks
         
