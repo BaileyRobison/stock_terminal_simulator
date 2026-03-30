@@ -9,6 +9,7 @@ colors:
   mean_line: "#7F8C8D"
   header_text: "#7F8C8D"
   trade_text: "white"
+  order_text: "white"
 
 design:
   axes_right: True
@@ -31,4 +32,6 @@ design:
     price_font: 35
     text_font: 20
     stat_font: 14
+  font:
     trades_font: 10
+    order_font: 10

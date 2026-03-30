@@ -32,7 +32,7 @@ class Engine:
         self.volume_pl = VolumePlotter(self.pl, 5, 0, 5, 1)
         self.volume_pl.initialize_bars(num_bars = settings.get('bars', 100))
         
-        self.trade_book = TradeBook(self.pl, 1, 5, 1, 2)
+        self.trade_book = TradeBook(self.pl, 1, 5, 1, 3)
         self.order_book = OrderBook(self.pl, 4, 5, 1, 2)
         
         self.pl.fig.subplots_adjust(hspace=0, wspace=0.25)
@@ -57,6 +57,7 @@ class Engine:
             self.candle_pl.plot_tick(total_tick, self.price_engine)    
             self.volume_pl.plot_tick(total_tick, self.price_engine)   
             self.trade_book.update_trades(self.price_engine)
+            self.order_book.update_book(self.price_engine)
             
             self.pl.refresh() # redraw updated plot
             
