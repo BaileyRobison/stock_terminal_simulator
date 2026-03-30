@@ -88,6 +88,9 @@ class PriceEngine:
         
         self.trades = [] # (time, price, size)
         
+        self.bids = []
+        self.asks = []
+        
     def update(self):
         # update time
         new_time = datetime.strptime(self.times[-1], self.time_format)
@@ -103,6 +106,8 @@ class PriceEngine:
         self.calculate_volume()
         
         self.update_trades()
+        
+        self.generate_order_book() # depends on price
         
     def random_wicks(self):
         open_price = self.prices[-2]
@@ -182,3 +187,31 @@ class PriceEngine:
         for i in range(n_trades):
             self.trades.append((trade_times[i], trade_prices[i], trade_vols[i]))
         
+    def generate_order_book(self):
+        # generate bids and asks, depends on price
+        number_bids = 8
+        bids = []
+        asks = []
+        
+        price_range = self.market.price * 0.002
+        max_vol = self.volumes[-1] / number_bids
+        
+        for i in range(number_bids):
+            # generate bid
+            offset = np.random.random() ** 2
+            bid_price = self.market.price - (offset * price_range)
+            bid_size = np.random.uniform(0, max_vol * 100)
+            bids.append(('{0:.2f}'.format(bid_price), format_num_display(bid_size)))
+            
+            # generate ask
+            offset = np.random.random() ** 2
+            ask_price = self.market.price + (offset * price_range)
+            ask_size = np.random.uniform(0, max_vol * 100)
+            asks.append(('{0:.2f}'.format(ask_price), format_num_display(ask_size)))
+            
+        # sort
+        bids.sort(key=lambda x: x[0], reverse=True)  # highest first
+        asks.sort(key=lambda x: x[0])
+        
+        self.bids = bids
+        self.asks = asks
