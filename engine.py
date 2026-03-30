@@ -34,7 +34,7 @@ class Engine:
         
         self.trade_book = TradeBook(self.pl, 1, 5, 1, 2)
         
-        self.pl.fig.subplots_adjust(hspace=0)
+        self.pl.fig.subplots_adjust(hspace=0, wspace=0.25)
         
         padding = read_yaml('style')['design']['figure_padding'] # remove extra padding outside plot
         self.pl.fig.subplots_adjust(left=padding, right=1-padding, top=1-padding, bottom=padding)
@@ -54,7 +54,8 @@ class Engine:
             self.price_engine.update()
             self.header_pane.update(self.price_engine)
             self.candle_pl.plot_tick(total_tick, self.price_engine)    
-            self.volume_pl.plot_tick(total_tick, self.price_engine)    
+            self.volume_pl.plot_tick(total_tick, self.price_engine)   
+            self.trade_book.update_trades(self.price_engine)
             
             self.pl.refresh() # redraw updated plot
             
@@ -170,7 +171,8 @@ class PriceEngine:
             
             # volume
             max_vol = self.volumes[-1] / n_trades # max volume this trade can have
-            volume = np.random.uniform(0, max_vol)
+            volume = np.random.uniform(0, max_vol * 1000)
+            
             trade_vols.append(format_num_display(volume))
             
         trade_times.sort() # sort to add to trade log in order
