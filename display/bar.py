@@ -20,8 +20,6 @@ class BarPlotter(SubPlotBase):
         self.plot_ticks = plot_ticks
         self.bars = []
         
-        self.ax.set_facecolor(self.COLORS['bg']) # background color
-        
         for side in ['bottom', 'top', 'left', 'right']: # set axes colors
             self.ax.spines[side].set_color(self.COLORS['axes'])
         self.ax.tick_params(axis='both', color=self.COLORS['axes'], labelcolor=self.COLORS['axes'])

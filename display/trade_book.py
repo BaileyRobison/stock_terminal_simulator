@@ -8,8 +8,6 @@ class TradeBook(SubPlotBase):
     def __init__(self, base_fig, row, col, width=1, height=1):
         super().__init__(base_fig, row, col, width, height)
         
-        self.ax.set_facecolor(self.COLORS['bg'])
-        
         for side in ['bottom', 'top', 'left', 'right']: # set axes colors
             self.ax.spines[side].set_color(self.COLORS['axes'])
         self.ax.tick_params(axis='both', color=self.COLORS['axes'], labelcolor=self.COLORS['axes'])
@@ -52,9 +50,11 @@ class TradeBook(SubPlotBase):
         
         for i in range(self.max_rows):
             y = 0.925 - (i + 1) * line_height
+            alpha = 1 - (i / self.max_rows) * 0.7 # dim older rows
             
             ax_txt = self.ax.text(
                 0.05, y, '',
+                alpha=alpha,
                 transform=self.ax.transAxes,
                 family='monospace',
                 verticalalignment='top',
@@ -78,3 +78,15 @@ class TradeBook(SubPlotBase):
                 text = f"{time:<8} {price:>8} {volume:>9}" # format spacing
                 self.trade_rows[i].set_text(text)
             
+            
+class OrderBook(SubPlotBase):
+    def __init__(self, base_fig, row, col, width=1, height=1):
+        super().__init__(base_fig, row, col, width, height)
+        
+        for side in ['bottom', 'top', 'left', 'right']: # set axes colors
+            self.ax.spines[side].set_color(self.COLORS['axes'])
+            self.ax.tick_params(axis='both', color=self.COLORS['axes'], labelcolor=self.COLORS['axes'])
+            
+        plt.grid(alpha=0) # no grid lines
+        self.ax.set_xticks([])
+        self.ax.set_yticks([])

@@ -5,7 +5,7 @@ import time
 from display.base import PlotBase
 from display.bar import CandlestickPlotter, VolumePlotter
 from display.header import HeaderPane
-from display.trade_book import TradeBook
+from display.trade_book import TradeBook, OrderBook
 from utils import read_yaml, format_num_display
 
 
@@ -33,6 +33,7 @@ class Engine:
         self.volume_pl.initialize_bars(num_bars = settings.get('bars', 100))
         
         self.trade_book = TradeBook(self.pl, 1, 5, 1, 2)
+        self.order_book = OrderBook(self.pl, 4, 5, 1, 2)
         
         self.pl.fig.subplots_adjust(hspace=0, wspace=0.25)
         
@@ -171,7 +172,7 @@ class PriceEngine:
             
             # volume
             max_vol = self.volumes[-1] / n_trades # max volume this trade can have
-            volume = np.random.uniform(0, max_vol * 1000)
+            volume = np.random.uniform(0, max_vol * 100)
             
             trade_vols.append(format_num_display(volume))
             

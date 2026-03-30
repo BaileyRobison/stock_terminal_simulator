@@ -13,7 +13,6 @@ class HeaderPane(SubPlotBase):
         super().__init__(base_fig, row, col, width, height)
 
         self.ax.axis("off")
-        self.ax.set_facecolor(self.COLORS['bg'])
         
         # stock name and price
         self.stock_text = self.create_text(0.05, 0.575, fontsize='ticker_font')

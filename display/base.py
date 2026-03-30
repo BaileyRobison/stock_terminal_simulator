@@ -61,3 +61,4 @@ class SubPlotBase:
     
     def __init__(self, base_fig, row, col, width=1, height=1):
         self.ax = base_fig.add_subplot(row, col, width, height)
+        self.ax.set_facecolor(self.COLORS['bg'])
