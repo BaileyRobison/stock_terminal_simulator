@@ -6,4 +6,5 @@ The window is broken up into several widgets:
 - Trade book with bids and asks
 
 The terminal window is displayed below.
+
 ![Terminal](assets/terminal.png)
