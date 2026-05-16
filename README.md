@@ -13,3 +13,8 @@ git clone https://github.com/BaileyRobison/stock_terminal_simulator.git
 ```
 
 To run, use the code in `main.py`.
+
+
+The tool will display a terminal window which will update over time, shown below.
+
+![Terminal](docs/assets/terminal.png)
