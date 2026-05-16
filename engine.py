@@ -2,8 +2,11 @@ from datetime import datetime, timedelta
 import numpy as np
 import time
 
-from display import PlotBase, CandlestickPlotter, VolumePlotter
-from utils import read_yaml
+from display.base import PlotBase
+from display.bar import CandlestickPlotter, VolumePlotter
+from display.header import HeaderPane
+from display.text_window import TradeBook, OrderBook
+from utils import read_yaml, format_num_display
 
 
 class Engine:
@@ -12,24 +15,27 @@ class Engine:
     """
     def __init__(self, market, settings = {}):  
         self.price_engine = PriceEngine(market)
-        self.long_term_update = settings.get('long_term_update', 10)
         
-        self.pl = PlotBase((5,3)) # base plot
+        self.pl = PlotBase((6,6)) # base plot
         
-        # long term candle chart
-        self.start_tick = settings.get('long_term_bars', 400)
-        self.long_candle_pl = CandlestickPlotter(self.pl, 0, 0, 3, 1, plot_wicks=False, plot_ticks=False)
-        self.long_candle_pl.initialize_bars(num_bars = self.start_tick)
+        self.start_tick = settings.get('bars', 100) + 1
+        
+        # header with price and stats
+        self.header_pane = HeaderPane(self.pl, 0, 0, 5, 1)
+        self.header_pane.set_stock(self.price_engine)
         
         # short term candle chart
-        self.candle_pl = CandlestickPlotter(self.pl, 1, 0, 3, 3)
+        self.candle_pl = CandlestickPlotter(self.pl, 1, 0, 5, 4)
         self.candle_pl.initialize_bars(num_bars = settings.get('bars', 100))
         
         # volume plot
-        self.volume_pl = VolumePlotter(self.pl, 4, 0, 3, 1)
+        self.volume_pl = VolumePlotter(self.pl, 5, 0, 5, 1)
         self.volume_pl.initialize_bars(num_bars = settings.get('bars', 100))
         
-        self.pl.fig.subplots_adjust(hspace=0)
+        self.trade_book = TradeBook(self.pl, 1, 5, 1, 3)
+        self.order_book = OrderBook(self.pl, 4, 5, 1, 2)
+        
+        self.pl.fig.subplots_adjust(hspace=0, wspace=0.25)
         
         padding = read_yaml('style')['design']['figure_padding'] # remove extra padding outside plot
         self.pl.fig.subplots_adjust(left=padding, right=1-padding, top=1-padding, bottom=padding)
@@ -44,14 +50,14 @@ class Engine:
         
         for tick in range(0, ticks): # plot ticks on both
             next_run += duration # time for next loop execution
-            total_tick = tick + self.start_tick # total ticks so far
+            total_tick = tick + self.start_tick + 1 # total ticks so far
             
             self.price_engine.update()
+            self.header_pane.update(self.price_engine)
             self.candle_pl.plot_tick(total_tick, self.price_engine)    
-            self.volume_pl.plot_tick(total_tick, self.price_engine)    
-            
-            if tick % self.long_term_update == 0:
-                self.long_candle_pl.plot_tick(total_tick, self.price_engine)
+            self.volume_pl.plot_tick(total_tick, self.price_engine)   
+            self.trade_book.update_trades(self.price_engine)
+            self.order_book.update_book(self.price_engine)
             
             self.pl.refresh() # redraw updated plot
             
@@ -59,9 +65,9 @@ class Engine:
             if sleep_time > 0: # account for execution taking longer than delay
                 time.sleep(sleep_time)
             
-            
         self.pl.end_plot()
-        
+
+
 class PriceEngine:
     """
     Handles stock prices for candlestick chart
@@ -81,18 +87,28 @@ class PriceEngine:
         
         self.volumes = [self.PARAMETERS['volume']['base_volume']]
         
+        self.trades = [] # (time, price, size)
+        
+        self.bids = []
+        self.asks = []
+        
     def update(self):
+        # update time
+        new_time = datetime.strptime(self.times[-1], self.time_format)
+        new_time += timedelta(minutes = self.time_step)
+        self.times.append(new_time.strftime(self.time_format))
+
         # update stock price
         self.market.update_stock()
         self.prices.append(self.market.price)
 
         self.random_wicks()
-        self.calculate_volume()
 
-        # update time
-        new_time = datetime.strptime(self.times[-1], self.time_format)
-        new_time += timedelta(minutes = self.time_step)
-        self.times.append(new_time.strftime(self.time_format))
+        self.calculate_volume()
+        
+        self.update_trades()
+        
+        self.generate_order_book() # depends on price
         
     def random_wicks(self):
         open_price = self.prices[-2]
@@ -137,4 +153,66 @@ class PriceEngine:
         volume = (beta * last_vol) + (raw_vol * (1 - beta))
         
         self.volumes.append(volume)
+
+    def update_trades(self):
+        n_trades = np.random.poisson(lam=2) # number of trades to generate
         
+        # how many seconds have elapsed
+        current_time = datetime.strptime(self.times[-1], self.time_format)
+        old_time = current_time - timedelta(minutes = self.time_step)
+        num_seconds = (current_time - old_time).total_seconds()
+        
+        # generate all elements of trade
+        trade_times = []
+        trade_prices = []
+        trade_vols = []
+        for n in range(n_trades):
+            # random new time, between last time and current time
+            secs = np.random.randint(0, num_seconds) # random number of seconds
+            trade_time = old_time + timedelta(seconds = secs)
+            trade_times.append(trade_time.strftime('%H:%M:%S'))
+            
+            # random price between high and low wicks
+            trade_price = np.random.uniform(self.lows[-1], self.highs[-1])
+            trade_prices.append('{0:.2f}'.format(trade_price))
+            
+            # volume
+            max_vol = self.volumes[-1] / n_trades # max volume this trade can have
+            volume = np.random.uniform(0, max_vol * 100)
+            
+            trade_vols.append(format_num_display(volume))
+            
+        trade_times.sort() # sort to add to trade log in order
+        
+        # build trades
+        for i in range(n_trades):
+            self.trades.append((trade_times[i], trade_prices[i], trade_vols[i]))
+        
+    def generate_order_book(self):
+        # generate bids and asks, depends on price
+        number_bids = 8
+        bids = []
+        asks = []
+        
+        price_range = self.market.price * 0.002
+        max_vol = self.volumes[-1] / number_bids
+        
+        for i in range(number_bids):
+            # generate bid
+            offset = np.random.random() ** 2
+            bid_price = self.market.price - (offset * price_range)
+            bid_size = np.random.uniform(0, max_vol * 100)
+            bids.append(('{0:.2f}'.format(bid_price), format_num_display(bid_size)))
+            
+            # generate ask
+            offset = np.random.random() ** 2
+            ask_price = self.market.price + (offset * price_range)
+            ask_size = np.random.uniform(0, max_vol * 100)
+            asks.append(('{0:.2f}'.format(ask_price), format_num_display(ask_size)))
+            
+        # sort
+        bids.sort(key=lambda x: x[0], reverse=True)  # highest first
+        asks.sort(key=lambda x: x[0])
+        
+        self.bids = bids
+        self.asks = asks

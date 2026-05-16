@@ -1,69 +1,14 @@
 """
-Basic display in matplotlib
+Classes to plot bar charts
 """
 import matplotlib.pyplot as plt
 from matplotlib.ticker import MaxNLocator
-from matplotlib.gridspec import GridSpec
-from PIL import Image, ImageTk
+import numpy as np
 
-from utils import read_yaml
+from display.base import SubPlotBase     
+from utils import format_num_display
 
-
-class PlotBase:
-    """
-    Base plot, holds subplots
-    """
-    COLORS = read_yaml('style')['colors']
     
-    def __init__(self, size=(1,1)):
-        plt.switch_backend('TkAgg')
-
-        fig = plt.figure(facecolor=self.COLORS['bg'])
-        fig.canvas.manager.toolbar.pack_forget() # remove toolbar and buttons
-        fig.canvas.manager.window.title('TERMINAL') # window name
-
-        # cover entire screen        
-        fig_manager = plt.get_current_fig_manager()
-        fig_manager.window.state('zoomed')
-
-        white_image = Image.new('RGB', (1, 1), (255, 255, 255)) # 1x1 white image
-        white_image_tk = ImageTk.PhotoImage(white_image)
-        fig.canvas.manager.window.iconphoto(False, white_image_tk) # replace matplotlib logo
-
-        self.fig = fig
-        self.gs = GridSpec(size[0], size[1], figure=self.fig)
-        
-    def add_subplot(self, row, col, width=1, height=1):
-        """
-        Add another plotting object as a subplot
-        Return and use in class constructor
-        """
-        ax = self.fig.add_subplot(self.gs[row:row+height, col:col+width])
-        return ax
-    
-    def start_plot(self):
-        plt.ion() # enter interactive mode
-    
-    def refresh(self):        
-        self.fig.canvas.draw_idle()
-        self.fig.canvas.flush_events()
-    
-    def end_plot(self):
-        plt.ioff() # leave interactive mode
-        plt.show()
-
-
-class SubPlotBase:
-    """
-    Super class for all subplots
-    """
-    COLORS = read_yaml('style')['colors']
-    DESIGN = read_yaml('style')['design']
-    
-    def __init__(self, base_fig, row, col, width=1, height=1):
-        self.ax = base_fig.add_subplot(row, col, width, height)
-
-
 class BarPlotter(SubPlotBase):
     """
     Super class for plotting bars
@@ -75,8 +20,6 @@ class BarPlotter(SubPlotBase):
         self.plot_ticks = plot_ticks
         self.bars = []
         
-        self.ax.set_facecolor(self.COLORS['bg']) # background color
-        
         for side in ['bottom', 'top', 'left', 'right']: # set axes colors
             self.ax.spines[side].set_color(self.COLORS['axes'])
         self.ax.tick_params(axis='both', color=self.COLORS['axes'], labelcolor=self.COLORS['axes'])
@@ -84,8 +27,8 @@ class BarPlotter(SubPlotBase):
         if self.DESIGN['axes_right']:
             self.ax.yaxis.tick_right()
         
-        line = self.DESIGN['grid_line_style']
-        alpha = self.DESIGN['grid_line_alpha']
+        line = self.DESIGN['grid_line']['style']
+        alpha = self.DESIGN['grid_line']['alpha']
         plt.grid(color=self.COLORS['grid'], linestyle=line, alpha=alpha) # grid lines
         
     def initialize_bars(self, num_bars):
@@ -94,7 +37,7 @@ class BarPlotter(SubPlotBase):
         """
         self.bars = self.ax.bar(range(num_bars), [0]*num_bars)
         
-        buffer = self.DESIGN['x_lim_buffer']
+        buffer = self.DESIGN['lim_buffer']['x_axis']
         self.ax.set_xlim(-1 * buffer, num_bars + buffer)
         
         if not self.plot_ticks:
@@ -121,8 +64,16 @@ class BarPlotter(SubPlotBase):
             
 
 class VolumePlotter(BarPlotter):
-    def __init__(self, base_fig, row, col, width=1, height=1, plot_ticks=True):
+    def __init__(self, base_fig, row, col, width=1, height=1, plot_ticks=True, plot_mean=True):
         super().__init__(base_fig, row, col, width, height, plot_ticks)
+        
+        self.plot_mean = plot_mean
+        
+        # update line when plotting mean
+        line = self.DESIGN['volume_mean']['style']
+        alpha = self.DESIGN['volume_mean']['alpha']
+        color = self.COLORS['mean_line']
+        self.mean_line, = self.ax.plot([], [], linestyle=line, alpha=alpha, color=color)
         
         plt.grid(alpha=0) # no grid lines
         
@@ -163,35 +114,30 @@ class VolumePlotter(BarPlotter):
         
         formatted_labels = []
         for t in yticks: # format numbers            
-            num = t * 1000
-            
-            if num >= 1e6: # divide by million or thousand
-                num /= 1e6
-                suffix = 'M'
-            elif num >= 1e3:
-                num /= 1e3
-                suffix = 'k'
-            else:
-                suffix = ''
-            
-            if num >= 10: # round
-                num = round(num)
-            else: # keep decimal if only 1s place
-                num = round(num,1)
-                
-            if num.is_integer(): # convert to int if needed
-                num = int(num)
-                
-            formatted_labels.append(str(num)+suffix)
+            f_num = format_num_display(t * 1000) # format for display
+            formatted_labels.append(f_num)
         
         formatted_labels[-1] = '' # hide top label to avoid overlap
         
         self.ax.set_yticks(yticks)
         self.ax.set_yticklabels(formatted_labels)
         
+    def plot_mean_line(self, tick, price_engine):
+        mean_window = 20
+        mean = np.median(price_engine.volumes[tick-mean_window:tick])
+        
+        buffer = self.DESIGN['lim_buffer']['x_axis']
+        x_vals = [-1*buffer, len(self.bars)+buffer]
+        y_vals = [mean, mean]
+        self.mean_line.set_data(x_vals, y_vals)
+        
     def plot_tick(self, tick, price_engine):      
         self.plot_bars(tick, price_engine)
         self.set_y_lim(tick, price_engine)
+        
+        if self.plot_mean:
+            self.plot_mean_line(tick, price_engine)
+        
         self.set_x_ticks(tick, price_engine)
     
         
@@ -203,8 +149,16 @@ class CandlestickPlotter(BarPlotter):
     def __init__(self, base_fig, row, col, width=1, height=1, plot_wicks=True, plot_ticks=True):
         super().__init__(base_fig, row, col, width, height, plot_ticks)
         
+        self.plot_ticks = plot_ticks
         self.plot_wicks = plot_wicks        
         self.wicks = []
+
+        line = self.DESIGN['last_price']['style']
+        alpha = self.DESIGN['last_price']['alpha']
+        color = self.COLORS['price_line']
+        self.price_line, = self.ax.plot([], [], linestyle=line, alpha=alpha, color=color)
+
+        self.price_marker = None
 
     def initialize_bars(self, num_bars = 50):
         """
@@ -214,6 +168,21 @@ class CandlestickPlotter(BarPlotter):
         
         if self.plot_wicks: # add wicks if needed
             self.wicks = self.ax.vlines(range(num_bars), [0]*num_bars, [0]*num_bars)
+            
+        if self.plot_ticks: # last price marker
+            self.price_marker = self.ax.text(
+                len(self.bars) + self.DESIGN['lim_buffer']['x_axis'],
+                0,
+                "",
+                ha='left',
+                va='center',
+                color=self.COLORS['axes'],
+                bbox=dict(
+                    boxstyle="round,pad=0.2",
+                    facecolor=self.COLORS['bg'],
+                    edgecolor=self.COLORS['axes']
+                )
+            )
 
     def plot_bars(self, tick, price_engine):
         """
@@ -256,12 +225,29 @@ class CandlestickPlotter(BarPlotter):
             low_wicks = price_engine.prices[tick-len(self.bars):tick]
             high_wicks = price_engine.prices[tick-len(self.bars):tick]
 
-        min_price = min(low_wicks) - self.DESIGN['y_lim_buffer']
-        max_price = max(high_wicks) + self.DESIGN['y_lim_buffer']
+        min_price = min(low_wicks) - self.DESIGN['lim_buffer']['y_axis']
+        max_price = max(high_wicks) + self.DESIGN['lim_buffer']['y_axis']
         
         self.ax.set_ylim(min_price, max_price) # set y limits
+        
+    def last_price_marker(self, price_engine):
+        last_price = price_engine.prices[-1]
+        
+        # draw line
+        buffer = self.DESIGN['lim_buffer']['x_axis']
+        x_vals = [len(self.bars) - 1, len(self.bars)+buffer]
+        y_vals = [last_price, last_price]        
+        self.price_line.set_data(x_vals, y_vals)
+        
+        # set marker
+        self.price_marker.set_position((len(self.bars)+buffer, last_price))
+        self.price_marker.set_text('{0:.2f}'.format(last_price))
         
     def plot_tick(self, tick, price_engine):      
         self.plot_bars(tick, price_engine)
         self.set_y_lim(tick, price_engine)
+        
+        if self.plot_ticks:
+            self.last_price_marker(price_engine)
+        
         self.set_x_ticks(tick, price_engine)

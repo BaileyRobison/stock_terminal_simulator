@@ -4,13 +4,34 @@ colors:
   grid: "#C0C0C0"
   green_bar: "#90EE90"
   red_bar: "#FF474C"
+  price_line: "#AAAAAA"
   volume_bar: "#4C6EF5"
+  mean_line: "#7F8C8D"
+  header_text: "#7F8C8D"
+  trade_text: "white"
+  order_text: "white"
 
 design:
-  x_lim_buffer: 2
-  y_lim_buffer: 2
-  figure_padding: 0.05
-  grid_line_style: "--"
-  grid_line_alpha: 0.2
-  volume_bar_alpha: 0.8
   axes_right: True
+  figure_padding: 0.05
+  lim_buffer:
+    x_axis: 2
+    y_axis: 2
+  grid_line:
+    style: "--"
+    alpha: 0.2
+  last_price:
+    style: ":"
+    alpha: 0.9
+  volume_bar_alpha: 0.8
+  volume_mean:
+    style: "-"
+    alpha: 0.5
+  header:
+    ticker_font: 60
+    price_font: 35
+    text_font: 20
+    stat_font: 14
+  font:
+    trades_font: 10
+    order_font: 10

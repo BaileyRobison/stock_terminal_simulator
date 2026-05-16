@@ -11,11 +11,10 @@ else:
 market = Market()
 market.set_regime(regime)
 market.set_stock(name = 'ABX')
+market.stock.set_price(110)
 
 settings = {
     'bars': 100,
-    'long_term_bars': 400,    
-    'long_term_update': 10,
 }
 
 eng = Engine(market, settings)
